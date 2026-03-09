@@ -17,19 +17,19 @@ More skills coming soon. Issues and PRs are welcome!
 ### Claude Code
 
 ```bash
-# Install a single skill
-claude install-skill https://github.com/Learning-Bayesian-Statistics/baygent-skills/tree/main/bayesian-workflow
+git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git /tmp/baygent-skills
+mkdir -p ~/.claude/skills
+cp -r /tmp/baygent-skills/bayesian-workflow ~/.claude/skills/
 ```
 
 ### Other compatible agents
 
-Clone the repo and point your agent at the skill folder you need:
+Clone the repo and copy the skill folder you need into your agent's skills location:
 
 ```bash
-git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git
+git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git /tmp/baygent-skills
+cp -r /tmp/baygent-skills/bayesian-workflow/ ~/.config/agents/skills/bayesian-workflow/
 ```
-
-Then copy the skill directory into your agent's skills location (e.g. `~/.config/agents/skills/` for Kimi Code).
 
 ## Philosophy
 

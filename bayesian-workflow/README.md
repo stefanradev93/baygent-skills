@@ -22,27 +22,25 @@ The skill enforces guardrails that agents won't apply on their own: 94% HDI, man
 
 ## Install
 
-### Claude Code (quickest)
+### Claude Code
 
-Download [`bayesian-workflow.skill`](bayesian-workflow.skill) and run:
-
-```bash
-claude install-skill bayesian-workflow.skill
-```
-
-Or install directly from GitHub:
+Clone and copy the skill into your personal skills directory:
 
 ```bash
-claude install-skill https://github.com/Learning-Bayesian-Statistics/baygent-skills/tree/main/bayesian-workflow
+git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git /tmp/baygent-skills
+mkdir -p ~/.claude/skills
+cp -r /tmp/baygent-skills/bayesian-workflow ~/.claude/skills/
 ```
+
+For project-level installation (available only in that project), copy into `.claude/skills/` at the project root instead.
 
 ### Other compatible agents (Kimi Code, Cursor, etc.)
 
 Clone the repo and copy the skill folder into your agent's skills directory:
 
 ```bash
-git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git
-cp -r baygent-skills/bayesian-workflow/ ~/.config/agents/skills/bayesian-workflow/
+git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git /tmp/baygent-skills
+cp -r /tmp/baygent-skills/bayesian-workflow/ ~/.config/agents/skills/bayesian-workflow/
 ```
 
 ### PyMC installation
