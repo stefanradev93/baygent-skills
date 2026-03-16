@@ -181,3 +181,5 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+blog-posts/
