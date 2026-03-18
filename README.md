@@ -8,7 +8,7 @@ A set of skills to call your agent Bayes. Thomas Bayes.
 
 | Skill | Description |
 |---|---|
-| [bayesian-workflow](bayesian-workflow/) | Full Bayesian modeling workflow with PyMC and ArviZ |
+| [bayesian-workflow](bayesian-workflow/) | Full Bayesian modeling workflow with PyMC and ArviZ. Full breakdown [here]([url](https://learnbayesstats.com/blog-posts/bayesian-workflow-agent-skill-pymc-arviz)). |
 
 More skills coming soon. Issues and PRs are welcome!
 
