@@ -217,8 +217,8 @@ samples = workflow.sample(
     conditions=real_data,
     num_samples=1000
 )
-# e.g. samples["alpha"].shape == (1, 1000)
-#      samples["beta"].shape  == (1, 1000)
+# e.g. samples["alpha"].shape == (1, 1000, 1)
+#      samples["beta"].shape  == (1, 1000, 1)
 
 # --------------------------------------------------
 # 8. Posterior predictive checks (custom)
