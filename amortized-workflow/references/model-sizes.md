@@ -5,6 +5,10 @@
 **SetTransformer is reserved for set-based data.** Never use this architecture when dealing with time series data. If time indices (continuous or discrete) are part of
 the simulator output, always indicate the `time_axis` when initializing a `TimeSeriesTransformer` which is important for the internal `Time2Vec` embedding.
 
+## `summary_dim` heuristic
+
+All summary networks accept a `summary_dim` argument that controls the dimensionality of the learned summary statistics vector. As a starting heuristic, **set `summary_dim` to 2× the number of parameters being inferred.** For example, if you are estimating 5 parameters, start with `summary_dim=10`. Scale up if diagnostics show poor recovery; scale down if the problem is very low-dimensional (1–2 parameters).
+
 ## SetTransformer
 | Model Size | embed_dims             | num_heads             | mlp_depths           | mlp_widths              |
 |------------|------------------------|-----------------------|----------------------|-------------------------|

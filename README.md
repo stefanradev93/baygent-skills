@@ -10,6 +10,7 @@ A set of skills to call your agent Bayes. Thomas Bayes.
 |---|---|
 | [bayesian-workflow](bayesian-workflow/) | Full Bayesian modeling workflow with PyMC and ArviZ. [Full breakdown](https://learnbayesstats.com/blog-posts/bayesian-workflow-agent-skill-pymc-arviz). |
 | [causal-inference](causal-inference/) | Production-grade Bayesian causal inference with PyMC, CausalPy, and DoWhy. [Full breakdown](https://learnbayesstats.com/blog-posts/causal-inference-agent-skill-pymc-causalpy-dowhy). |
+| [amortized-workflow](amortized-workflow/) | Amortized Bayesian workflow with BayesFlow for simulation-based inference. *(In development — [PR #10](https://github.com/Learning-Bayesian-Statistics/baygent-skills/pull/10))* |
 
 More skills coming soon. Issues and PRs are welcome!
 
@@ -22,6 +23,7 @@ git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git /tm
 mkdir -p ~/.claude/skills
 cp -r /tmp/baygent-skills/bayesian-workflow ~/.claude/skills/
 cp -r /tmp/baygent-skills/causal-inference ~/.claude/skills/
+cp -r /tmp/baygent-skills/amortized-workflow ~/.claude/skills/  # optional — BayesFlow / SBI
 ```
 
 ### Other compatible agents
@@ -32,6 +34,7 @@ Clone the repo and copy the skill folders you need into your agent's skills loca
 git clone https://github.com/Learning-Bayesian-Statistics/baygent-skills.git /tmp/baygent-skills
 cp -r /tmp/baygent-skills/bayesian-workflow/ ~/.config/agents/skills/bayesian-workflow/
 cp -r /tmp/baygent-skills/causal-inference/ ~/.config/agents/skills/causal-inference/
+cp -r /tmp/baygent-skills/amortized-workflow/ ~/.config/agents/skills/amortized-workflow/  # optional
 ```
 
 > **Note:** causal-inference depends on bayesian-workflow — install both if you want causal inference.

@@ -42,7 +42,7 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
    - `workflow.fit_online(...)` if generating on the fly
    - `workflow.fit_offline(...)` if loading all simulations in memory
    - `workflow.fit_disk(...)` if streaming simulations from disk
-8. **Diagnose in silico** — Use held-out simulations with known ground truth using the workflow's built-in diagnostics: `workflow.compute_default_diagnostics(...)` for numerical results and `workflow.plot_default_diagnositcs(...)` for visual diagnostics.
+8. **Diagnose in silico** — Use held-out simulations with known ground truth using the workflow's built-in diagnostics: `workflow.compute_default_diagnostics(...)` for numerical results and `workflow.plot_default_diagnostics(...)` for visual diagnostics.
 9. **Amortized inference on real data** — Use `workflow.sample(...)`
 10. **Posterior predictive checks (PPCs)** — Re-simulate data from posterior samples and compare to the real data using model-specific test quantities
 11. **Report results** — Include simulator assumptions, training regime, simulation budget, diagnostic performance, PPC results, and limitations
@@ -157,6 +157,7 @@ history = workflow.fit_online(
     epochs=500,
     batch_size=32,
     num_batches_per_epoch=100,
+    validation_data=300,  # auto-simulates 300 validation sets
 )
 
 # --- Mandatory: save history and inspect training convergence ---
@@ -251,7 +252,7 @@ workflow = bf.BasicWorkflow(
     inference_network=bf.networks.FlowMatching(),
     summary_network=summary_net,
     inference_variables=["parameters"],
-    inference_conditions=["observables"],
+    summary_conditions=["observables"],  # NOT inference_conditions — structured data needs a summary network
     ...
 )
 
@@ -270,7 +271,7 @@ workflow = bf.BasicWorkflow(
     inference_network=bf.networks.FlowMatching(),
     summary_network=summary_net,
     inference_variables=["parameters"],
-    inference_conditions=["observables"],
+    summary_conditions=["observables"],  # NOT inference_conditions — structured data needs a summary network
     ...
 )
 
@@ -491,7 +492,7 @@ General recipe:
 - **Training on simulations from the wrong prior** — networks may not generalize well to real data
 - **Using train simulations for diagnostics** — gives over-optimistic results
 - **Ignoring preprocessing mismatch** — real-data inference breaks silently if scaling/formatting differs from training
-- **Flattening structured data** — wastes inductive bias and usually hurts calibration. The most common mistake is treating N exchangeable 1D observations as a flat vector instead of turnign them into a `(N, 1)` set and using a SetTransformer
+- **Flattening structured data** — wastes inductive bias and usually hurts calibration. The most common mistake is treating N exchangeable 1D observations as a flat vector instead of turning them into a `(N, 1)` set and using a SetTransformer
 - **Interpreting loss as inferential quality** — low loss does not guarantee good posterior estimation
 - **Skipping PPCs** — good in-silico recovery does not guarantee the simulator explains the real data
 - **Over-trusting contraction** — strong contraction without calibration can mean overconfidence

@@ -12,10 +12,9 @@ The history file should contain the dict returned by
     with open("history.json", "w") as f:
         json.dump(history.history, f)
 
-Note: online training does not require validation data. BayesFlow generates
-fresh simulations every epoch, so the training loss is already an unbiased
-estimate of generalization. Absence of ``val_loss`` is normal and expected
-for ``fit_online`` — overfitting to a fixed dataset is not possible.
+Note: ``validation_data`` should be passed to all ``fit_*`` calls (use an
+integer for online training to auto-simulate validation sets). If ``val_loss``
+is absent, the script still runs but cannot check for overfitting.
 
 Usage:
     python inspect_training.py --history history.json
@@ -40,10 +39,9 @@ def inspect_history(history: dict) -> dict:
     ----------
     history : dict
         A dictionary with at least a ``"loss"`` key mapping to a list
-        of per-epoch loss values.  ``"val_loss"`` is optional and is
-        **not expected for online training** (``fit_online``), where fresh
-        simulations are generated each epoch and overfitting to a fixed
-        dataset is not possible.
+        of per-epoch loss values.  ``"val_loss"`` should be present
+        (pass ``validation_data=`` to ``fit_*``). If absent, overfitting
+        detection is skipped.
 
     Returns
     -------
@@ -95,10 +93,10 @@ def inspect_history(history: dict) -> dict:
         }
     else:
         report["overfitting"] = {
-            "detected": False,
+            "detected": None,
             "message": (
-                "No validation loss — consistent with online training (fit_online). "
-                "Fresh simulations each epoch make overfitting to a fixed dataset impossible."
+                "No validation loss found. Pass validation_data= to fit_* calls "
+                "to enable overfitting detection."
             ),
         }
 
