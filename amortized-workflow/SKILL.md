@@ -31,10 +31,10 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
    - If offline/disk: ensure simulations are already generated from the intended prior and data-generating process or need pre-processing
 4. **Choose the architecture** — this step is critical; getting it wrong silently ruins inference. See `references/conditioning.md` for the full conditioning logic and decision table.
    - **"Simple vector"** means the observation is a **single fixed-length feature vector** whose element order is meaningful (e.g., 5 named sensor readings, a pre-computed summary statistic). Only then: route through `inference_conditions` with no summary network.
-   - **Set-based / exchangeable data** — If the simulator produces **N observations that are exchangeable** (i.e., their joint likelihood is invariant to permutation), the data is a **set**, not a vector. This includes: N i.i.d. draws, regression datasets with (x, y) pairs, repeated measurements, trial-level data, cross-sectional samples. Route through `summary_conditions` with a `SetTransformer`. **Never put this in `inference_conditions`.**
-   - **Time series** — ordered sequences: route through `summary_conditions` with `TimeSeriesTransformer` or `TimeSeriesNetwork`.
-   - **Images** — grid data: route through `summary_conditions` with `ConvolutionalNetwork`.
-   - **A workflow can use both slots simultaneously.** Fixed-length metadata (e.g., sample size N, scalar design variables) can go in `inference_conditions` while structured observations go in `summary_conditions`.
+   - **Set-based / exchangeable data** — If the simulator produces **N observations that are exchangeable** (i.e., their joint likelihood is invariant to permutation), the data is a **set**, not a vector. This includes: N i.i.d. draws, regression datasets with (x, y) pairs, repeated measurements, trial-level data, cross-sectional samples. Route through `summary_variables` with a `SetTransformer`. **Never put this in `inference_conditions`.**
+   - **Time series** — ordered sequences: route through `summary_variables` with `TimeSeriesTransformer` or `TimeSeriesNetwork`.
+   - **Images** — grid data: route through `summary_variables` with `ConvolutionalNetwork`.
+   - **A workflow can use both slots simultaneously.** Fixed-length metadata (e.g., sample size N, scalar design variables) can go in `inference_conditions` while structured observations go in `summary_variables`.
    - **When in doubt, use a summary network.** It is always safer to include one than to omit one; a summary network will always be needed if the data has more than one axis.
 5. **Build the workflow** — Prefer `bf.BasicWorkflow(...)`
 6. **Run simulation sanity checks** — Before training, verify that simulated data look plausible and span the relevant range of real observations
@@ -51,7 +51,7 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
 
 These rules are non-negotiable. Violating any of them will silently produce wrong results.
 
-- **MUST use `bf.Adapter()` for data routing.** Build an explicit adapter chain with `.as_set()`, `.constrain()`, `.concatenate()`, etc. and pass `adapter=` to `BasicWorkflow`. Do NOT invent custom adapter functions, lambdas, or manual preprocessing — the adapter handles training and inference identically. The naming shorthand (`inference_variables=`, `summary_conditions=` as kwargs) is ONLY acceptable when the simulator output already has the exact shapes/dtypes the networks expect AND no parameter has bounded support. When in doubt, use an explicit adapter.
+- **MUST use `bf.Adapter()` for data routing.** Build an explicit adapter chain with `.as_set()`, `.constrain()`, `.concatenate()`, etc. and pass `adapter=` to `BasicWorkflow`. Do NOT invent custom adapter functions, lambdas, or manual preprocessing — the adapter handles training and inference identically. The naming shorthand (`inference_variables=`, `summary_variables=` as kwargs) is ONLY acceptable when the simulator output already has the exact shapes/dtypes the networks expect AND no parameter has bounded support. When in doubt, use an explicit adapter.
 - **MUST start with the Small network configuration** from `references/model-sizes.md`. Scale up to Base or Large ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
 - **MUST use `workflow.simulate(N)` to generate test data** for diagnostics — not a Python for-loop over `simulator()`. The simulator returned by `bf.make_simulator` is a batched object; `workflow.simulate(N)` calls it efficiently and returns data in the format the workflow expects.
 - **MUST use `workflow.compute_default_diagnostics(test_data=...)` and `workflow.plot_default_diagnostics(test_data=...)`** for in-silico diagnostics. NEVER hand-roll coverage, bias, or calibration computations — the built-in methods are correct, complete, and consistent with the house thresholds.
@@ -59,8 +59,8 @@ These rules are non-negotiable. Violating any of them will silently produce wron
 - **MUST reuse the existing simulator functions for PPCs.** NEVER re-implement the generative model by hand for posterior predictive checks. Loop over a subset of posterior draws (50 is a good default), indexing over the `num_samples` axis, and pass each draw through the simulator's forward model.
 - **MUST save `history.history` as JSON** (not CSV, not a DataFrame — it is a plain dict). Then run `scripts/inspect_training.py` or call `inspect_history()` in-process.
 - **MUST pass `validation_data=` to all `fit_*` calls.** Use an integer (e.g., `validation_data=300`) for online training.
-- **NEVER mix an explicit `adapter=` with the naming shorthand** (`inference_variables=`, `summary_conditions=`, `inference_conditions=` as kwargs). They are mutually exclusive. Passing both causes silent conflicts.
-- **NEVER flatten structured data into `inference_conditions`.** Sets, time series, and images MUST go through `summary_conditions` with an appropriate summary network.
+- **NEVER mix an explicit `adapter=` with the naming shorthand** (`inference_variables=`, `summary_variables=`, `inference_conditions=` as kwargs). They are mutually exclusive. Passing both causes silent conflicts.
+- **NEVER flatten structured data into `inference_conditions`.** Sets, time series, and images MUST go through `summary_variables` with an appropriate summary network.
 - **`workflow.plot_default_diagnostics()` ALWAYS returns a `dict[str, Figure]`.** Iterate directly over `.items()` to save figures. Do not type-check or branch on the return type.
 - **NEVER skip in-silico diagnostics.** Good training loss does not imply good inference.
 
@@ -125,7 +125,7 @@ inference_net = bf.networks.FlowMatching()
 # The adapter routes simulator output to the correct network slots and handles
 # parameter constraints, set assembly, dtype conversion, and concatenation.
 #
-# NEVER mix adapter= with naming kwargs (inference_variables=, summary_conditions=, etc.).
+# NEVER mix adapter= with naming kwargs (inference_variables=, summary_variables=, etc.).
 # NEVER write a custom adapter function — always use the bf.Adapter() chain.
 adapter = (
     bf.Adapter()
@@ -252,7 +252,7 @@ workflow = bf.BasicWorkflow(
     inference_network=bf.networks.FlowMatching(),
     summary_network=summary_net,
     inference_variables=["parameters"],
-    summary_conditions=["observables"],  # NOT inference_conditions — structured data needs a summary network
+    summary_variables=["observables"],  # NOT inference_conditions — structured data needs a summary network
     ...
 )
 
@@ -271,7 +271,7 @@ workflow = bf.BasicWorkflow(
     inference_network=bf.networks.FlowMatching(),
     summary_network=summary_net,
     inference_variables=["parameters"],
-    summary_conditions=["observables"],  # NOT inference_conditions — structured data needs a summary network
+    summary_variables=["observables"],  # NOT inference_conditions — structured data needs a summary network
     ...
 )
 
@@ -284,13 +284,13 @@ history = workflow.fit_disk(root="path/to/simulation_bank", load_fn=custom_load,
 
 See `references/adapter.md` for the full adapter API and a step-by-step example.
 
-When `BasicWorkflow` receives `inference_variables=`, `summary_conditions=`, etc. as keyword arguments, it constructs a **minimal implicit adapter** that only renames and routes those keys. This is sufficient when the simulator output already has the right shapes and dtypes. Use an explicit `bf.Adapter()` chain and pass `adapter=` to the workflow whenever you need structural transforms (`.as_set`, `.broadcast`), parameter constraints (`.constrain`), feature engineering (`.sqrt`, `.log`), dtype coercion (`.convert_dtype`), or custom concatenation. The explicit adapter and the naming shorthand are mutually exclusive — do not use both.
+When `BasicWorkflow` receives `inference_variables=`, `summary_variables=`, etc. as keyword arguments, it constructs a **minimal implicit adapter** that only renames and routes those keys. This is sufficient when the simulator output already has the right shapes and dtypes. Use an explicit `bf.Adapter()` chain and pass `adapter=` to the workflow whenever you need structural transforms (`.as_set`, `.broadcast`), parameter constraints (`.constrain`), feature engineering (`.sqrt`, `.log`), dtype coercion (`.convert_dtype`), or custom concatenation. The explicit adapter and the naming shorthand are mutually exclusive — do not use both.
 
 ### Summary networks
 
-See `references/conditioning.md` for the full conditioning model `p(inference_variables | summary_net(summary_conditions), inference_conditions)` and a decision table.
+See `references/conditioning.md` for the full conditioning model `p(inference_variables | summary_net(summary_variables), inference_conditions)` and a decision table.
 
-Use a summary network (and route data through `summary_conditions`) whenever observations are not a single fixed-length vector with meaningful element order. **Most statistical models produce set-based (exchangeable) data** — N i.i.d. draws, regression datasets, repeated measurements, cross-sectional samples. These MUST use a `SetTransformer` via `summary_conditions`, never be flattened and placed in `inference_conditions`.
+Use a summary network (and route data through `summary_variables`) whenever observations are not a single fixed-length vector with meaningful element order. **Most statistical models produce set-based (exchangeable) data** — N i.i.d. draws, regression datasets, repeated measurements, cross-sectional samples. These MUST use a `SetTransformer` via `summary_variables`, never be flattened and placed in `inference_conditions`.
 
 - **Set-based / exchangeable data (most common case)**:
   - `bf.networks.SetTransformer` — **required default** for any model that generates N exchangeable observations

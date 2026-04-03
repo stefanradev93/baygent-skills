@@ -15,3 +15,6 @@ dependencies:
     - arviz-plots>=1.0.0
     - causalpy>=0.8
     - dowhy>=0.14
+    - bayesflow>=2.0
+    - jax
+    - jaxlib

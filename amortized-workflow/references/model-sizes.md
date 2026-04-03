@@ -43,3 +43,19 @@ All summary networks accept a `summary_dim` argument that controls the dimension
 | Small      | (16, 32)              | (3, 3)                 | (1, 1)            | 64            |
 | Base       | (16, 32, 64)          | (3, 3, 3)              | (1, 1, 1)         | 128           |
 | Large      | (16, 32, 64, 128)     | (3, 3, 3, 3)           | (1, 1, 1, 1)      | 256           |
+
+## Inference networks (subnet sizing)
+
+All three inference networks (`FlowMatching`, `DiffusionModel`, `StableConsistencyModel`) use a `TimeMLP` subnet by default. Control its capacity via `subnet_kwargs=`:
+
+```python
+bf.networks.FlowMatching(subnet_kwargs={"widths": (128, 128), "time_embedding_dim": 16})
+```
+
+| Model Size | widths                 | time_embedding_dim |
+|------------|------------------------|--------------------|
+| Small      | (128, 128)             | 16                 |
+| Base       | (256, 256)             | 32                 |
+| Large      | (512, 512, 512)        | 64                 |
+
+**Base is the BayesFlow default.** Start with Small for problems with fewer than ~5 parameters and simple summary statistics. Scale to Large only if diagnostics show poor calibration after sufficient training with Base.

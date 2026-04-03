@@ -6,9 +6,9 @@ An `Adapter` is a composable preprocessing pipeline that transforms the raw simu
 
 ## When to use a custom adapter vs. the workflow shorthand
 
-> **CRITICAL: The explicit `adapter=` and the naming shorthand (`inference_variables=`, `summary_conditions=`, etc.) are MUTUALLY EXCLUSIVE. NEVER pass both — they will silently conflict. When in doubt, always use an explicit `bf.Adapter()` chain.**
+> **CRITICAL: The explicit `adapter=` and the naming shorthand (`inference_variables=`, `summary_variables=`, etc.) are MUTUALLY EXCLUSIVE. NEVER pass both — they will silently conflict. When in doubt, always use an explicit `bf.Adapter()` chain.**
 
-`BasicWorkflow` accepts `inference_variables`, `inference_conditions`, `summary_conditions`, and `summary_variables` as keyword arguments. When you pass these names, the workflow constructs a **minimal implicit adapter** that only renames and routes the named keys. This is convenient for simple cases but cannot handle:
+`BasicWorkflow` accepts `inference_variables`, `inference_conditions`, and `summary_variables` as keyword arguments. When you pass these names, the workflow constructs a **minimal implicit adapter** that only renames and routes the named keys. This is convenient for simple cases but cannot handle:
 
 - structural transformations (e.g., stacking x and y into a set)
 - parameter-space constraints (e.g., `sigma > 0`)
@@ -152,5 +152,5 @@ Steps execute sequentially. Common ordering conventions:
 - **Forgetting `.convert_dtype`** — NumPy defaults to `float64`; most backends default to `float32`. This mismatch causes runtime errors or silent type promotion.
 - **Concatenating before constraining** — if you concatenate parameters and then constrain, the constraint applies to the concatenated block, not individual columns. Always constrain before concatenating.
 - **Omitting `.broadcast` for scalar context variables (shared within batch)** — scalars passed as `inference_conditions` without broadcasting will fail or be silently dropped during batch assembly.
-- **Using the naming shorthand with a custom adapter simultaneously** — if you pass `adapter=`, do not also pass `inference_variables=`, `summary_conditions=`, etc. to `BasicWorkflow`; they will conflict.
+- **Using the naming shorthand with a custom adapter simultaneously** — if you pass `adapter=`, do not also pass `inference_variables=`, `summary_variables=`, etc. to `BasicWorkflow`; they will conflict.
 - **No need to call the adapter manually** - the adapter is part of an `approximator` and will always be called internally in the context of the appropriate call (e.g., forward, inverse).
