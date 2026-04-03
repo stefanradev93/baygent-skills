@@ -61,7 +61,7 @@ The adapter then transforms the raw output dict `{beta, sigma, N, x, y}` into th
 adapter = (
     bf.Adapter()
     .broadcast("N", to="x")
-    .as_set(["x", "y"])
+    .as_set(["x", "y"]) # use .as_time_series() for time series
     .constrain("sigma", lower=0)
     .sqrt("N")
     .convert_dtype("float64", "float32")
@@ -153,4 +153,4 @@ Steps execute sequentially. Common ordering conventions:
 - **Concatenating before constraining** — if you concatenate parameters and then constrain, the constraint applies to the concatenated block, not individual columns. Always constrain before concatenating.
 - **Omitting `.broadcast` for scalar context variables (shared within batch)** — scalars passed as `inference_conditions` without broadcasting will fail or be silently dropped during batch assembly.
 - **Using the naming shorthand with a custom adapter simultaneously** — if you pass `adapter=`, do not also pass `inference_variables=`, `summary_conditions=`, etc. to `BasicWorkflow`; they will conflict.
-- **No need to call the adapetr manually** - the adapter is part of an `approximator` and will be called internally in the context of the appropriate call (e.g., forward, inverse).
+- **No need to call the adapter manually** - the adapter is part of an `approximator` and will always be called internally in the context of the appropriate call (e.g., forward, inverse).

@@ -52,13 +52,16 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
 These rules are non-negotiable. Violating any of them will silently produce wrong results.
 
 - **MUST use `bf.Adapter()` for data routing.** Build an explicit adapter chain with `.as_set()`, `.constrain()`, `.concatenate()`, etc. and pass `adapter=` to `BasicWorkflow`. Do NOT invent custom adapter functions, lambdas, or manual preprocessing — the adapter handles training and inference identically. The naming shorthand (`inference_variables=`, `summary_conditions=` as kwargs) is ONLY acceptable when the simulator output already has the exact shapes/dtypes the networks expect AND no parameter has bounded support. When in doubt, use an explicit adapter.
-- **MUST start with the Small network configuration** from `model-sizes.md`. Scale up to Base or Large ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
+- **MUST start with the Small network configuration** from `references/model-sizes.md`. Scale up to Base or Large ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
 - **MUST use `workflow.simulate(N)` to generate test data** for diagnostics — not a Python for-loop over `simulator()`. The simulator returned by `bf.make_simulator` is a batched object; `workflow.simulate(N)` calls it efficiently and returns data in the format the workflow expects.
 - **MUST use `workflow.compute_default_diagnostics(test_data=...)` and `workflow.plot_default_diagnostics(test_data=...)`** for in-silico diagnostics. NEVER hand-roll coverage, bias, or calibration computations — the built-in methods are correct, complete, and consistent with the house thresholds.
+- **`workflow.sample()` returns original parameter names, NOT `"inference_variables"`.** The adapter's reverse transform restores the original keys from the simulator (e.g., `"alpha"`, `"beta"`, `"sigma"`). Each parameter has shape `(batch, num_samples)` for scalars or `(batch, num_samples, d)` for vectors. NEVER index into `"inference_variables"` — that key does not exist in the output.
+- **MUST reuse the existing simulator functions for PPCs.** NEVER re-implement the generative model by hand for posterior predictive checks. Loop over a subset of posterior draws (50 is a good default), indexing over the `num_samples` axis, and pass each draw through the simulator's forward model.
 - **MUST save `history.history` as JSON** (not CSV, not a DataFrame — it is a plain dict). Then run `scripts/inspect_training.py` or call `inspect_history()` in-process.
 - **MUST pass `validation_data=` to all `fit_*` calls.** Use an integer (e.g., `validation_data=300`) for online training.
 - **NEVER mix an explicit `adapter=` with the naming shorthand** (`inference_variables=`, `summary_conditions=`, `inference_conditions=` as kwargs). They are mutually exclusive. Passing both causes silent conflicts.
 - **NEVER flatten structured data into `inference_conditions`.** Sets, time series, and images MUST go through `summary_conditions` with an appropriate summary network.
+- **`workflow.plot_default_diagnostics()` ALWAYS returns a `dict[str, Figure]`.** Iterate directly over `.items()` to save figures. Do not type-check or branch on the return type.
 - **NEVER skip in-silico diagnostics.** Good training loss does not imply good inference.
 
 ## Installation
@@ -105,9 +108,9 @@ simulator = bf.make_simulator([my_prior, my_observation_model])
 # - TimeSeriesTransformer / TimeSeriesNetwork for ordered sequences.
 # - ConvolutionalNetwork for image data.
 #
-# ALWAYS start with the SMALL config from model-sizes.md. Scale up only if diagnostics
+# ALWAYS start with the SMALL config from references/model-sizes.md. Scale up only if diagnostics
 # show poor recovery or calibration after sufficient training.
-summary_net = bf.networks.SetTransformer(...)  # see model-sizes.md — start with Small
+summary_net = bf.networks.SetTransformer(...)  # see references/model-sizes.md — start with Small
 
 inference_net = bf.networks.FlowMatching()
 # alternatives:
@@ -154,7 +157,6 @@ history = workflow.fit_online(
     epochs=500,
     batch_size=32,
     num_batches_per_epoch=100,
-    validation_data=300,  # auto-simulate 300 validation sets
 )
 
 # --- Mandatory: save history and inspect training convergence ---
@@ -179,8 +181,15 @@ if not training_report["overall"]["ok"]:
 # MUST use workflow.simulate() — NEVER loop over simulator() manually.
 # MUST use the built-in diagnostics — NEVER hand-roll coverage/bias/calibration.
 test_data = workflow.simulate(300)
+
+# plot_default_diagnostics ALWAYS returns a dict[str, Figure].
+# No need to type-check — iterate directly.
 figures = workflow.plot_default_diagnostics(test_data=test_data)
-metrics = workflow.compute_default_diagnostics(test_data=test_data)
+for name, fig in figures.items():
+    fig.savefig(f"diagnostics_{name}.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True)
 
 # --- Mandatory: save diagnostics and check house thresholds ---
 from scripts.check_diagnostics import check_diagnostics
@@ -198,20 +207,35 @@ if diag_report["overall"]["decision"] == "STOP":
 # 7. Amortized inference on real data (if any)
 # --------------------------------------------------
 
+# The adapter is applied in REVERSE after sampling: the returned dict
+# contains the ORIGINAL parameter names from the simulator (e.g.,
+# "alpha", "beta", "sigma"), NOT "inference_variables".
+# Each parameter has shape (batch, num_samples) for scalars or
+# (batch, num_samples, d) for vectors.
 real_data = {"observables": x_obs}
 samples = workflow.sample(
     conditions=real_data,
     num_samples=1000
 )
+# e.g. samples["alpha"].shape == (1, 1000)
+#      samples["beta"].shape  == (1, 1000)
 
 # --------------------------------------------------
 # 8. Posterior predictive checks (custom)
 # --------------------------------------------------
 
-# schematic:
-# - draw posterior samples theta_s from samples["parameters"]
-# - re-simulate x_rep ~ p(x | theta_s)
-# - compare x_rep to x_obs using domain-specific summaries / discrepancy measures
+# MUST reuse the existing simulator functions for PPCs.
+# NEVER re-implement the generative model by hand.
+# Loop over a subset of posterior draws (50 is a good default),
+# indexing over the num_samples axis:
+#
+# n_ppc = 50
+# for s in range(n_ppc):
+#     # Extract single draw (index over num_samples dim)
+#     theta_s = {k: samples[k][0, s] for k in ["alpha", "beta", ...]}
+#     # Pass through the simulator's forward model
+#     x_rep = my_observation_model(**theta_s)
+#     # Compare x_rep to x_obs using domain-specific summaries
 ```
 
 ## Offline and disk training
@@ -437,12 +461,19 @@ If diagnostics disagree, trust **calibration** first. A narrow but miscalibrated
 
 ## Posterior predictive checks
 
-PPCs in BayesFlow are always custom and model-dependent.
+PPCs in BayesFlow are always custom and model-dependent. **MUST reuse the existing simulator functions** — NEVER re-implement the generative model by hand.
 
 General recipe:
 
-1. Draw posterior samples `theta_s ~ q(theta | x_obs)`
-2. Re-simulate replicated data `x_rep ~ p(x | theta_s)`
+1. Draw posterior samples `theta_s ~ q(theta | x_obs)` via `workflow.sample()`. The returned dict has the **original parameter names** (e.g., `alpha`, `beta`), each with shape `(batch, num_samples)` or `(batch, num_samples, d)`.
+2. Loop over a subset of posterior draws (50 is a good default), indexing over the `num_samples` axis:
+   ```python
+   n_ppc = 50
+   for s in range(n_ppc):
+       theta_s = {k: float(samples[k][0, s]) for k in ["alpha", "beta", ...]}
+       x_rep = my_observation_model(**theta_s)
+       # overlay / compare x_rep to x_obs
+   ```
 3. Compare `x_rep` to `x_obs` using:
    - raw overlays
    - domain-relevant summary statistics
@@ -454,6 +485,8 @@ General recipe:
 
 ## Common gotchas
 
+- **Accessing `"inference_variables"` from `workflow.sample()` output** — the adapter reverse-transforms the output so the returned dict has the **original parameter names** (e.g., `"alpha"`, `"beta"`), NOT `"inference_variables"`. Each parameter has shape `(batch, num_samples)` for scalars or `(batch, num_samples, d)` for vectors.
+- **Re-implementing the simulator for PPCs** — always reuse the existing prior/observation model functions. Loop over a subset of posterior draws (50 default) and pass each through the simulator.
 - **Using online training with a slow simulator** — switch to offline or disk training
 - **Training on simulations from the wrong prior** — networks may not generalize well to real data
 - **Using train simulations for diagnostics** — gives over-optimistic results
@@ -476,7 +509,7 @@ General recipe:
 
 ## Model sizes
 
-See `model-sizes.md` for different model sizes when choosing a summary backbone for a particular problem. **Always start with the Small configuration.** Scale up only if diagnostics indicate insufficient capacity (poor recovery or calibration despite converged training). Weigh simulation budget vs. data dimensionality when choosing to scale up.
+Always check `references/model-sizes.md` for rules on model sizes when choosing a summary backbone for a particular problem.
 
 ## Reporting template
 
