@@ -19,6 +19,10 @@ baygent-skills/
 │   ├── SKILL.md                # Amortized Bayesian workflow with BayesFlow
 │   ├── references/             # Adapters, conditioning logic, model sizes
 │   └── scripts/                # Utility scripts (check_diagnostics.py, inspect_training.py)
+├── evals/                         # Eval scenarios and benchmarks
+│   ├── bayesian-workflow/         # 6 scenarios, 3 iterations
+│   ├── causal-inference/          # 6 scenarios
+│   └── amortized-workflow/        # 6 scenarios + trigger set + benchmark results
 ├── environment.yml             # Mamba/conda env definition (env name: baygent)
 ├── LICENSE                     # MIT
 └── CLAUDE.md                   # This file
@@ -45,6 +49,6 @@ Every skill follows the Agent Skills spec:
 - xarray-first for InferenceData operations
 
 ### Testing
-- Eval workspace: `../bayesian-workflow-workspace/` (sibling directory)
-- 6 test scenarios covering logistic regression, hierarchical models, divergences, count data, model comparison, prior elicitation
+- All evals now in `evals/` (bayesian-workflow, causal-inference, amortized-workflow)
 - Benchmark target: 100% with skill vs ~90% without
+- Each eval has: `eval_metadata.json` (prompt + assertions), `with_skill/` and `without_skill/` outputs + grading

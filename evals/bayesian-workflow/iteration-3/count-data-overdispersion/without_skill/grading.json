@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+      "passed": true,
+      "evidence": "analysis_notes.md Section 2 is entirely dedicated to 'Likelihood Choice: Why Negative Binomial over Poisson', explicitly identifying overdispersion in the data. ticket_model.py line 130 uses pm.NegativeBinomial('tickets', mu=mu_nb, alpha=alpha, observed=y) as the primary likelihood. A Poisson model is also built for comparison, but the NegBin is the recommended model."
+    },
+    {
+      "text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+      "passed": true,
+      "evidence": "analysis_notes.md lines 15-29 provide a thorough explanation: 'the variance-to-mean ratio is well above 1 -- some days spike to 40+ tickets while the typical day sees around 8-12. This is overdispersion.' It further explains that Poisson assumes variance == mean (equidispersion), and that fitting Poisson to overdispersed data leads to 'posterior intervals that are too narrow (false precision)'. The code also prints the variance/mean ratio explicitly (line 51)."
+    },
+    {
+      "text": "Uses log-link function for count data",
+      "passed": true,
+      "evidence": "analysis_notes.md Section 3 states 'We use a log link function, which is standard for count GLMs' and provides the formula log(mu_i) = intercept + beta_dow * X_dow[i] + beta_release * X_release[i]. In ticket_model.py lines 126-127, the linear predictor is computed on the log scale and then exponentiated: log_mu_nb = intercept + ... followed by mu_nb = pm.math.exp(log_mu_nb)."
+    },
+    {
+      "text": "Sets appropriate priors for count model parameters",
+      "passed": true,
+      "evidence": "analysis_notes.md Section 4 provides detailed justification for each prior. ticket_model.py lines 115-123 set: intercept ~ Normal(2.0, 1.0) (exp(2) ~ 7.4 tickets, reasonable for 5-15 range), beta_dow ~ Normal(0, 0.5) (centered at no effect, allows ~2.7x variation at 2 sigma), beta_release ~ Normal(0, 1.0) (wider to allow large release impacts), alpha ~ HalfNormal(10) (weakly informative, respects alpha > 0 constraint). All priors are weakly informative and domain-justified."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "ticket_model.py lines 135-136: 'with negbin_model: prior_pred = pm.sample_prior_predictive(samples=500, random_seed=42)' is called before pm.sample() which appears at lines 164-180. The prior predictive samples are visualized in a histogram with the observed mean overlaid (lines 138-155)."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "ticket_model.py lines 215-219: 'with negbin_model: ppc_negbin = pm.sample_posterior_predictive(trace_negbin, random_seed=42)' and similarly for the Poisson model. These are called after pm.sample() and used for posterior predictive check plots (az.plot_ppc) comparing both models."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "ticket_model.py line 186: az.summary(trace_negbin, var_names=['intercept', 'beta_dow', 'beta_release', 'alpha']) is called and printed. Line 198: az.plot_trace(trace_negbin, ...) generates trace plots saved to trace_plots.png. Additionally, lines 191-194 explicitly check R-hat < 1.01 and ESS > 400 programmatically."
+    },
+    {
+      "text": "Reports predictor effects with uncertainty intervals (HDI)",
+      "passed": true,
+      "evidence": "ticket_model.py lines 290-303: For each predictor (release effect and all 6 DOW effects), the code computes and prints the median and 94% HDI using az.hdi(..., hdi_prob=0.94). Example output format: 'Release multiplicative effect: Median: X.XXx, 94% HDI: [low, high]'. A forest plot with 94% HDI is also generated (lines 317-334)."
+    },
+    {
+      "text": "Interprets effects on the natural count scale (not just log scale)",
+      "passed": true,
+      "evidence": "ticket_model.py lines 290-303: Coefficients are exponentiated with np.exp() and reported as multiplicative effects (e.g., '2.7x' meaning releases roughly triple ticket counts). The notes (analysis_notes.md line 49) explain: 'exp(beta) is the factor by which the mean count changes per unit change in the predictor'. Section 7 of the notes interprets results on the count scale: 'releases roughly triple the expected ticket count'."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

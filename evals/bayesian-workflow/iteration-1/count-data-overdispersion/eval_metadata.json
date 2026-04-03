@@ -1,0 +1,16 @@
+{
+  "eval_id": 4,
+  "eval_name": "count-data-overdispersion",
+  "prompt": "I'm analyzing the number of customer support tickets per day for a SaaS company. Over the past 6 months (180 days), most days have 5-15 tickets, but some days spike to 40+. The variance seems larger than the mean. I want to model this and understand what drives the spikes — I have day_of_week and whether there was a product release that day as predictors.",
+  "assertions": [
+    "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+    "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+    "Uses log-link function for count data",
+    "Sets appropriate priors for count model parameters",
+    "Calls pm.sample_prior_predictive() before inference",
+    "Calls pm.sample_posterior_predictive() after inference",
+    "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+    "Reports predictor effects with uncertainty intervals (HDI)",
+    "Interprets effects on the natural count scale (not just log scale)"
+  ]
+}

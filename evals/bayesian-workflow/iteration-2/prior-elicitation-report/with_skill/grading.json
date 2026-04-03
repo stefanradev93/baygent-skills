@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+      "passed": true,
+      "evidence": "In drug_trial_model.py lines 127-133: 'Domain knowledge says similar drugs produce effects in [-20, +5] mmHg. Midpoint = (-20 + 5) / 2 = -7.5 mmHg. Using the rule sigma ~ range / 4: (5 - (-20)) / 4 = 6.25.' This yields pm.Normal('drug_effect', mu=-7.5, sigma=6.25). Also documented in Appendix B of the report: 'Domain knowledge: similar drugs produce -20 to +5 mmHg. Midpoint is -7.5; SD = range/4 = 6.25.'"
+    },
+    {
+      "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+      "passed": true,
+      "evidence": "PreliZ is included in the installation command on line 18 of drug_trial_model.py: 'mamba install -c conda-forge pymc nutpie arviz preliz matplotlib pandas'. Prior predictive checks are extensively discussed: lines 165-210 of drug_trial_model.py perform and visualize prior predictive checks, and the report explains them in the glossary (line 176) and in the 'How the Analysis Works' section (line 67): 'Before fitting the model, we verified that our prior assumptions produce plausible predictions... This step (called a prior predictive check) ensures the analysis starts from a sensible foundation.'"
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() to check priors",
+      "passed": true,
+      "evidence": "Line 167 of drug_trial_model.py: 'prior_pred = pm.sample_prior_predictive(random_seed=rng)'. This is followed by extensive prior predictive checking code (lines 172-210) including printing statistics and saving a visualization."
+    },
+    {
+      "text": "Documents prior justifications in the code or notes",
+      "passed": true,
+      "evidence": "Extensive prior justifications in drug_trial_model.py: intercept prior (lines 121-124): 'The control group may show a small placebo effect... We center at 0 with SD=5, so the 94% prior mass spans roughly -10 to +10 mmHg'; drug_effect prior (lines 127-133): domain knowledge translation with midpoint and range/4 rule; sigma prior (lines 136-140): 'Gamma(2, 0.3) has mean ~6.7, mode ~3.3, and avoids near-zero values'. Also documented in Appendix B of the report with a full prior choices table."
+    },
+    {
+      "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+      "passed": true,
+      "evidence": "Both are present in drug_trial_model.py. az.summary() is called on lines 237-239. az.plot_trace() is called on lines 266-270 with kind='rank_vlines'. Additional diagnostics include R-hat checks (line 244), ESS bulk/tail checks (lines 249-251), divergence counts (line 255), and energy plots (line 277)."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive()",
+      "passed": true,
+      "evidence": "Line 292 of drug_trial_model.py: 'idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng))'. This is followed by posterior predictive check visualization (lines 305-315)."
+    },
+    {
+      "text": "Generates a structured report suitable for a non-technical audience",
+      "passed": true,
+      "evidence": "The file medical_board_report.md is a complete structured report for a non-technical audience (the Medical Board). It includes: Executive Summary, 'How to Read This Report' section, Study Design, 'How the Analysis Works (Plain Language)' section, Results with accessible tables, Quality Assurance in plain language, Practical Implications, Limitations, Conclusion, and an Appendix with a comprehensive Glossary of 14 terms. Language throughout is accessible, e.g., 'roughly a 19-in-20 chance', 'Think of it as sending many scouts to map out a landscape'."
+    },
+    {
+      "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+      "passed": true,
+      "evidence": "The outputs consistently use Bayesian probability language: 'credible interval' (report lines 80, 174), 'posterior' (report lines 63, 172), 'probability that the drug lowers blood pressure' (report line 81, code line 413), '94% HDI' (throughout both files), 'plausible range' (report lines 25, 80). The report explicitly contrasts with frequentist language: 'Unlike traditional (frequentist) statistics, which can only tell you whether a result is statistically significant or not'. No p-values or frequentist significance claims appear anywhere."
+    },
+    {
+      "text": "Explains concepts in an accessible way for a Bayesian beginner",
+      "passed": true,
+      "evidence": "The report includes: a 'How to Read This Report' section (lines 18-28), a 'How the Analysis Works (Plain Language)' section with numbered steps (lines 51-68), intuitive explanations like 'roughly a 19-in-20 chance' (line 12), analogies like 'sending many scouts to map out a landscape' (line 178), a comprehensive glossary with plain-language definitions for 14 terms including posterior, prior, credible interval, HDI, R-hat, ESS, PIT, LOO-CV, and Pareto k (lines 169-184), and explicit notes like 'no confusing language about failing to reject the null hypothesis' (line 27)."
+    },
+    {
+      "text": "Recommends conda-forge or mamba-forge for PyMC installation (not pip)",
+      "passed": true,
+      "evidence": "Lines 17-18 of drug_trial_model.py: 'Installation (prefer conda-forge to avoid compiled-backend issues): mamba install -c conda-forge pymc nutpie arviz preliz matplotlib pandas'. Also repeated in the report Appendix F (line 242): 'Installation: mamba install -c conda-forge pymc nutpie arviz preliz'."
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10,
+    "pass_rate": 1.0
+  }
+}

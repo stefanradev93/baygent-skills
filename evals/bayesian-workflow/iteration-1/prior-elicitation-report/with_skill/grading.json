@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+      "passed": true,
+      "evidence": "In drug_trial_model.py lines 130-138, the domain knowledge range of -20 to +5 mmHg is explicitly translated into prior parameters using the midpoint/range rule: mu = (+5 + -20) / 2 = -7.5, sigma = (5 - (-20)) / 4 = 6.25, yielding Normal(-7.5, 6.25) for the beta (drug effect) prior. The formula and reasoning are fully documented in comments."
+    },
+    {
+      "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+      "passed": true,
+      "evidence": "Prior predictive checks are prominently featured: drug_trial_model.py dedicates Step 4 (lines 206-244) entirely to prior predictive checks with a decision rule for plausibility. The medical_board_report.md Section 4.2 describes the prior predictive check and its result. PreliZ is listed in the requirements (line 20: 'pip install pymc nutpie arviz numpy pandas matplotlib preliz') but is not directly used in the code. Prior predictive checks as a concept are thoroughly covered."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() to check priors",
+      "passed": true,
+      "evidence": "drug_trial_model.py line 211: 'prior_pred = pm.sample_prior_predictive(random_seed=RANDOM_SEED)'. The result is then visualized with az.plot_ppc (line 217) and checked against a plausibility threshold (lines 237-243: checking if >10% of prior predictive BP changes exceed |50| mmHg)."
+    },
+    {
+      "text": "Documents prior justifications in the code or notes",
+      "passed": true,
+      "evidence": "Extensive prior justifications are documented in drug_trial_model.py lines 121-144 (Step 2): alpha prior Normal(0, 5) justified as allowing typical placebo effects; beta prior Normal(-7.5, 6.25) justified via the domain knowledge range formula; sigma prior Gamma(2, 0.2) justified as covering 5-15 mmHg patient variability. Additionally, the medical_board_report.md Section 3 ('Prior Knowledge') includes a table explaining each prior's reasoning in plain language."
+    },
+    {
+      "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+      "passed": true,
+      "evidence": "drug_trial_model.py Step 6 (lines 267-312) runs comprehensive convergence diagnostics: az.summary() at line 273 (checking R-hat and ESS), az.plot_trace() at lines 296-299 with kind='rank_vlines', R-hat check at line 278, ESS bulk/tail checks at lines 283-284, divergence count at line 289, and az.plot_energy() at line 308. The report (Section 4.1) presents a convergence table with all four diagnostic criteria."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive()",
+      "passed": true,
+      "evidence": "drug_trial_model.py line 263: 'idata.extend(pm.sample_posterior_predictive(idata, random_seed=RANDOM_SEED))'. The posterior predictive samples are then used for model criticism in Step 7 (posterior predictive check at line 323, residual analysis at lines 360-364)."
+    },
+    {
+      "text": "Generates a structured report suitable for a non-technical audience",
+      "passed": true,
+      "evidence": "medical_board_report.md is a comprehensive 287-line report structured for a medical board audience with: Executive Summary, Background and Objective, Data Overview, plain-language model explanation (Section 3), Quality Checks (Section 4), Results with probability statements (Section 5), Clinical Interpretation (Section 6), Limitations (Section 8), Conclusion and Recommendation (Section 9), and a Glossary for Non-Technical Readers (Appendix B). Technical details are appropriately relegated to Appendix A."
+    },
+    {
+      "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+      "passed": true,
+      "evidence": "The report consistently uses Bayesian probability language: 'credible interval' (used throughout, e.g., Section 5.1 table header '94% Credible Interval'), 'posterior distribution' (Sections 5.3, Appendix B), direct probability statements like '>99% probability' (Section 5.2), 'posterior probability' (implicit throughout). Line 130 explicitly contrasts with frequentist CIs: 'unlike frequentist confidence intervals, which do not have this interpretation.' The words 'p-value' and 'statistically significant' do not appear anywhere in either file. The code uses 'HDI' (Highest Density Interval) consistently."
+    },
+    {
+      "text": "Explains concepts in an accessible way for a Bayesian beginner",
+      "passed": true,
+      "evidence": "The report includes multiple accessibility features: Section 3 is titled 'How the Analysis Works (Plain Language)' and explains the model as a 'story'; Section 3 ('Why Bayesian Analysis?') contrasts Bayesian vs traditional approaches in everyday terms; Section 5.1 includes 'How to read the credible interval' explanation; Section 5.2 frames results as answers to direct clinical questions; Section 4.1 explains MCMC as an algorithm that 'must properly explore the range of plausible parameter values'; Appendix B provides a full glossary defining 10 technical terms (Bayesian analysis, posterior distribution, credible interval, prior, MCMC, R-hat, posterior predictive check, LOO-CV, clinically meaningful effect) in plain language."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

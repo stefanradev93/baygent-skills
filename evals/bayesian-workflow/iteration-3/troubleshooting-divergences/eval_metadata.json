@@ -1,0 +1,15 @@
+{
+  "eval_id": 3,
+  "eval_name": "troubleshooting-divergences",
+  "prompt": "My Bayesian model has 47 divergences out of 4000 samples and R-hat of 1.03 on two parameters. The trace plots look like one chain is stuck. What do I do?",
+  "assertions": [
+    "Explicitly states that results are unreliable and should NOT be interpreted",
+    "Identifies all three symptoms: divergences, high R-hat, stuck chain",
+    "Suggests non-centered reparameterization as a fix",
+    "Suggests increasing target_accept (to 0.95 or higher)",
+    "Suggests checking for multimodality",
+    "Provides concrete Python/PyMC code examples for at least two fixes",
+    "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)",
+    "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)"
+  ]
+}

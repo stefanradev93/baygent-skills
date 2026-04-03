@@ -1,0 +1,19 @@
+{
+  "eval_id": 1,
+  "eval_name": "did-policy-evaluation",
+  "prompt": "I have panel data from 50 stores across 2 years (monthly observations). In January 2024, 25 stores adopted a new checkout system while 25 didn't. I want to estimate the causal effect of the new checkout system on monthly revenue. The data has columns: store_id, month, revenue, group (1=treatment, 0=control), post_treatment (1 if after Jan 2024, 0 otherwise). Help me build a rigorous causal analysis.",
+  "assertions": [
+    "Proposes a DAG or explicitly states causal assumptions before estimation",
+    "Asks the user to confirm the causal graph or assumptions before proceeding",
+    "Identifies this as a Difference-in-Differences design (not just a regression)",
+    "States the parallel trends assumption explicitly and explains what it means",
+    "Asks the user whether the parallel trends assumption is defensible",
+    "Uses CausalPy's DifferenceInDifferences class (not manual PyMC regression)",
+    "Uses a PyMC-backed model (cp.pymc_models.*), not sklearn",
+    "Runs at least one refutation or robustness check (placebo time, parallel trends test, or DoWhy refuter)",
+    "Reports the effect estimate with a credible interval (HDI), not just a point estimate",
+    "Uses causal language appropriately (says 'the checkout system caused/increased revenue by X' only if refutation passes)",
+    "Produces or offers to produce a report with assumptions, results, and limitations sections",
+    "States limitations or threats to validity (e.g., what could violate parallel trends)"
+  ]
+}

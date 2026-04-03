@@ -1,0 +1,70 @@
+{
+  "expectations": [
+    {
+      "text": "Defines a meta function that returns varying N (e.g., np.random.randint(10, 200))",
+      "passed": true,
+      "evidence": "Line 56-58: `def meta_fn(): return dict(N=rng.integers(10, 201))` — returns varying N uniformly from [10, 200]."
+    },
+    {
+      "text": "Uses bf.make_simulator() with meta_fn= for the variable sample size",
+      "passed": true,
+      "evidence": "Line 61: `simulator = bf.make_simulator([prior, observation_model], meta_fn=meta_fn)`"
+    },
+    {
+      "text": "Uses bf.Adapter() with .as_set() on the (x, y) observations",
+      "passed": true,
+      "evidence": "Line 110: `.as_set([\"x\", \"y\"])` inside the Adapter chain."
+    },
+    {
+      "text": "Concatenates x and y into summary_variables as a (N, 2) set",
+      "passed": true,
+      "evidence": "Line 115: `.concatenate([\"x\", \"y\"], into=\"summary_variables\")` — after `.as_set()` reshapes each to (N,1), concatenation yields (N,2)."
+    },
+    {
+      "text": "Uses .broadcast() for N to match batch dimensions",
+      "passed": true,
+      "evidence": "Line 109: `.broadcast(\"N\", to=\"x\")` — broadcasts scalar N along batch dim."
+    },
+    {
+      "text": "Routes N (or sqrt(N)) as inference_conditions, not through the summary network",
+      "passed": true,
+      "evidence": "Lines 113, 116: `.sqrt(\"N\")` then `.rename(\"N\", \"inference_conditions\")` — N is routed as inference_conditions, not into summary_variables."
+    },
+    {
+      "text": "Uses a SetTransformer as the summary network (data is exchangeable given parameters)",
+      "passed": true,
+      "evidence": "Line 84: `summary_net = bf.networks.SetTransformer(summary_dim=6, ...)`"
+    },
+    {
+      "text": "Calls .constrain('sigma', lower=0) for the positive noise parameter",
+      "passed": true,
+      "evidence": "Line 111: `.constrain(\"sigma\", lower=0)`"
+    },
+    {
+      "text": "Passes validation_data= to the fit_* call",
+      "passed": true,
+      "evidence": "Line 140: `validation_data=300` in `workflow.fit_online(...)`."
+    },
+    {
+      "text": "Runs in-silico diagnostics with workflow.compute_default_diagnostics()",
+      "passed": true,
+      "evidence": "Line 175: `metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True)`"
+    },
+    {
+      "text": "Posterior samples use original parameter names (alpha, beta, sigma)",
+      "passed": true,
+      "evidence": "Lines 212-218: `samples[\"alpha\"]`, `samples[\"beta\"]`, `samples[\"sigma\"]` accessed by original names."
+    },
+    {
+      "text": "Demonstrates or mentions posterior predictive checks reusing the observation model function",
+      "passed": true,
+      "evidence": "Lines 224-246: Section 9 performs posterior predictive checks. Line 234 generates `y_rep = rng.normal(alpha_s + beta_s * x_obs, sigma_s, size=N_OBS)` which reuses the observation model logic. Line 233 comment: `# Reuse the observation model — never re-implement`."
+    }
+  ],
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "total": 12,
+    "pass_rate": 1.0
+  }
+}

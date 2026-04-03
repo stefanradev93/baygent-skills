@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "skill_name": "amortized-workflow",
+    "skill_path": "/Users/alex_andorra/tptm_alex/portfolio/agent-skills/baygent-skills/amortized-workflow",
+    "executor_model": "claude-opus-4-6",
+    "timestamp": "2026-04-03T00:00:00Z",
+    "bayesflow_version": "2.0.10",
+    "evals_run": [
+      "gaussian-location-scale",
+      "multi-param-constraints",
+      "regression-varying-n",
+      "time-series-ar2",
+      "non-identifiable-mixture",
+      "offline-simulation-bank"
+    ],
+    "runs_per_configuration": 1
+  },
+  "with_skill_results": {
+    "gaussian-location-scale": {"passed": 16, "failed": 0, "total": 16, "pass_rate": 1.0},
+    "multi-param-constraints": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.0},
+    "regression-varying-n": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.0},
+    "time-series-ar2": {"passed": 11, "failed": 0, "total": 11, "pass_rate": 1.0},
+    "non-identifiable-mixture": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0},
+    "offline-simulation-bank": {"passed": 11, "failed": 0, "total": 11, "pass_rate": 1.0},
+    "aggregate": {
+      "total_assertions": 72,
+      "total_passed": 72,
+      "total_failed": 0,
+      "overall_pass_rate": 1.0
+    }
+  },
+  "without_skill_results": {
+    "gaussian-location-scale": {"passed": 14, "failed": 2, "total": 16, "pass_rate": 0.875},
+    "multi-param-constraints": {"passed": 10, "failed": 2, "total": 12, "pass_rate": 0.833},
+    "regression-varying-n": {"passed": 2, "failed": 10, "total": 12, "pass_rate": 0.167},
+    "time-series-ar2": {"passed": 8, "failed": 3, "total": 11, "pass_rate": 0.727},
+    "non-identifiable-mixture": {"passed": 8, "failed": 2, "total": 10, "pass_rate": 0.8},
+    "offline-simulation-bank": {"passed": 10, "failed": 1, "total": 11, "pass_rate": 0.909},
+    "aggregate": {
+      "total_assertions": 72,
+      "total_passed": 52,
+      "total_failed": 20,
+      "overall_pass_rate": 0.722
+    }
+  },
+  "comparison": {
+    "with_skill_pass_rate": 1.0,
+    "without_skill_pass_rate": 0.722,
+    "lift": 0.278,
+    "common_failures_without_skill": [
+      "No reference to Small model configuration from model-sizes.md (5/6 scenarios)",
+      "No diagnostic threshold checking / go-no-go gate (5/6 scenarios)",
+      "No training history saved as JSON / inspect_training (2/6 scenarios)",
+      "Missing BayesFlow 2.x API patterns: meta_fn, broadcast, adapter methods (1/6 scenarios)",
+      "Proceeds past poor diagnostics without stopping (1/6 scenarios)"
+    ]
+  }
+}

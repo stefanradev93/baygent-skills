@@ -1,0 +1,17 @@
+{
+  "eval_id": 5,
+  "eval_name": "structural-mediation",
+  "prompt": "I'm studying whether a job training program affects earnings. I believe the training works through two channels: (1) directly improving skills, and (2) indirectly by increasing confidence, which leads to better job interviews. I want to decompose the total effect into the direct effect (skills) and indirect effect (confidence → interviews → earnings). I have data on 1000 participants: training (binary), confidence_score (continuous), interview_performance (continuous), and annual_earnings (continuous). Build me a structural causal model to estimate the direct and indirect effects.",
+  "assertions": [
+    "Proposes a DAG with: training → confidence → interview_performance → earnings AND training → earnings (direct path)",
+    "Asks the user to confirm the DAG, especially whether there are unmeasured confounders between confidence and earnings",
+    "Identifies this as a mediation analysis requiring a structural causal model (not a quasi-experiment)",
+    "Uses pm.do()/pm.observe() or Bayesian SEM with PyMC to estimate interventional distributions or structural effects (not frequentist regression)",
+    "Distinguishes between Natural Direct Effect (NDE) and Natural Indirect Effect (NIE)",
+    "States the assumptions required for mediation (no unmeasured mediator-outcome confounding, no treatment-induced confounding)",
+    "Asks the user whether these mediation assumptions are defensible",
+    "Reports both direct and indirect effects with uncertainty (credible intervals)",
+    "Warns that mediation analysis requires stronger assumptions than total effect estimation",
+    "Produces or offers to produce a report with the DAG, assumptions, effects decomposition, and limitations"
+  ]
+}

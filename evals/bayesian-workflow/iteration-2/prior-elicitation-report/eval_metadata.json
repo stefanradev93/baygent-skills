@@ -1,0 +1,17 @@
+{
+  "eval_id": 6,
+  "eval_name": "prior-elicitation-report",
+  "prompt": "I'm new to Bayesian stats and I need to model the effect of a new drug on blood pressure. I have pre/post measurements for 80 patients (treatment group) and 80 controls. I honestly don't know what priors to pick \u2014 the blood pressure difference could be anywhere from -20 to +5 mmHg based on similar drugs. Also, my boss wants a report she can present to the medical board. Can you walk me through the whole thing?",
+  "assertions": [
+    "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+    "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+    "Calls pm.sample_prior_predictive() to check priors",
+    "Documents prior justifications in the code or notes",
+    "Runs convergence diagnostics (az.summary or az.plot_trace)",
+    "Calls pm.sample_posterior_predictive()",
+    "Generates a structured report suitable for a non-technical audience",
+    "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+    "Explains concepts in an accessible way for a Bayesian beginner",
+    "Recommends conda-forge or mamba-forge for PyMC installation (not pip)"
+  ]
+}

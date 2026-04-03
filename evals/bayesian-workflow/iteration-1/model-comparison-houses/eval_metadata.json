@@ -1,0 +1,15 @@
+{
+  "eval_id": 5,
+  "eval_name": "model-comparison-houses",
+  "prompt": "I have two models for predicting house prices: one is a simple linear regression (square footage + bedrooms), the other adds neighborhood as a hierarchical effect. Both have converged fine. How do I compare them and decide which to use? I have the InferenceData objects for both.",
+  "assertions": [
+    "Uses az.compare() or az.loo() for LOO-CV comparison",
+    "Reports ELPD values with standard errors",
+    "Reports ELPD difference between models with its standard error (dse)",
+    "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+    "Checks and reports Pareto k diagnostics",
+    "Mentions stacking weights as a complementary tool",
+    "Suggests preferring the simpler model if models are indistinguishable",
+    "Provides a comparison table or structured output format"
+  ]
+}

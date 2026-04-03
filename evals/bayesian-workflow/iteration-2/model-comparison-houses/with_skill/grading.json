@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Uses az.compare() or az.loo() for LOO-CV comparison", "passed": true, "evidence": "az.loo(idata_simple, pointwise=True), az.loo(idata_hierarchical, pointwise=True), and az.compare(models) all used."},
+    {"text": "Reports ELPD values with standard errors", "passed": true, "evidence": "LOO objects and az.compare() DataFrame printed, which include elpd_loo and se columns."},
+    {"text": "Reports ELPD difference between models with its standard error (dse)", "passed": true, "evidence": "elpd_diff = comparison['elpd_diff'].iloc[1], dse = comparison['dse'].iloc[1] — both extracted and printed."},
+    {"text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)", "passed": true, "evidence": "Three-tier interpretation: < 2*dse (indistinguishable), 2-4*dse (moderate), > 4*dse (strong evidence)."},
+    {"text": "Checks and reports Pareto k diagnostics", "passed": true, "evidence": "Pareto k values extracted, observations with k > 0.7 counted and reported, az.plot_khat() used."},
+    {"text": "Mentions stacking weights as a complementary tool", "passed": true, "evidence": "Dedicated section on stacking weights explaining they minimize expected log predictive density loss."},
+    {"text": "Suggests preferring the simpler model if models are indistinguishable", "passed": true, "evidence": "When ratio < 2: 'Prefer the simpler model (simple linear regression)'."},
+    {"text": "Provides a comparison table or structured output format", "passed": true, "evidence": "az.compare() DataFrame printed as structured table with elpd_loo, se, elpd_diff, dse, weight columns."}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+      "passed": true,
+      "evidence": "The analysis explicitly identifies overdispersion as the central modeling challenge (analysis_notes.md lines 17-37) and builds a NegativeBinomial model as the primary model (ticket_model.py lines 162-203: pm.NegativeBinomial('tickets', mu=mu, alpha=alpha, ...)). A Poisson model is also built as a baseline for comparison, but the NegBin is clearly identified as the preferred model throughout."
+    },
+    {
+      "text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+      "passed": true,
+      "evidence": "Detailed explanation in analysis_notes.md lines 19-37: 'A Poisson distribution constrains Var(Y) = E(Y). When the observed variance exceeds the observed mean... the Poisson assumption is violated.' Lists three specific consequences of ignoring overdispersion (artificially narrow CIs, poor PPCs, unreliable LOO-CV). Explains the NegBin solution: 'Var(Y) = mu + mu^2 / alpha' and how alpha controls overdispersion. Also in ticket_model.py lines 88-97: 'The count data shows overdispersion (variance >> mean), so a Poisson likelihood is insufficient.'"
+    },
+    {
+      "text": "Uses log-link function for count data",
+      "passed": true,
+      "evidence": "Both models use a log link: ticket_model.py line 136 (Poisson) and line 193 (NegBin): 'log_mu = intercept + beta_dow[dow_idx] + beta_release * release' followed by 'mu = pm.math.exp(log_mu)'. The analysis_notes.md line 158 also explains: 'The log link ensures the predicted rate mu is always positive, which is a physical requirement for count data.'"
+    },
+    {
+      "text": "Sets appropriate priors for count model parameters",
+      "passed": true,
+      "evidence": "All priors are explicitly justified with scale reasoning in both files. ticket_model.py lines 171-189: intercept Normal(2, 1) with comment 'exp(2) ~ 7.4, 95% of prior mass on [1, 55] tickets/day'; beta_dow ZeroSumNormal(sigma=0.5) for identifiability; beta_release Normal(0, 1) allowing up to ~7.4x multiplier; alpha Gamma(2, 0.5) with mean=4 avoiding near-zero. analysis_notes.md lines 50-77 provides detailed rationale for each prior choice, including consideration of alternatives. Priors are on the log scale as appropriate for a log-link model."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "ticket_model.py line 143: 'prior_pred_poisson = pm.sample_prior_predictive(random_seed=42)' inside the Poisson model context, and line 203: 'prior_pred_negbin = pm.sample_prior_predictive(random_seed=42)' inside the NegBin model context. Both are called before pm.sample() (inference starts at line 224). Prior predictive plots are also generated and saved (lines 146-157, 205-217)."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "ticket_model.py line 233: 'idata_poisson.extend(pm.sample_posterior_predictive(idata_poisson, random_seed=42))' and line 246: 'idata_negbin.extend(pm.sample_posterior_predictive(idata_negbin, random_seed=42))'. Both are called after pm.sample() completes. Posterior predictive checks are then performed (lines 319-362) including overall PPC and targeted variance PPC."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "Both are used. ticket_model.py line 255: 'summary_poisson = az.summary(idata_poisson, round_to=3)' and line 274: 'summary_negbin = az.summary(idata_negbin, round_to=3)'. Also line 289: 'az.plot_trace(idata, kind=\"rank_vlines\")' for both models. The code further checks R-hat <= 1.01, ESS bulk and tail >= 400, and counts divergences (lines 260-268, 277-285). Energy diagnostics are also plotted (lines 302-312)."
+    },
+    {
+      "text": "Reports predictor effects with uncertainty intervals (HDI)",
+      "passed": true,
+      "evidence": "ticket_model.py line 474: 'az.summary(idata_negbin, hdi_prob=0.94, round_to=3)' provides HDI for all parameters. Specific HDI reporting at lines 561-562: '94% HDI for release multiplier: [{hdi_multiplier[0]:.2f}, {hdi_multiplier[1]:.2f}]', lines 567-568 for baseline HDI, and lines 571-575 for alpha HDI. Forest plot with 94% HDI is generated (lines 479-493). Day-of-week effects are plotted with HDI error bars (lines 534-540)."
+    },
+    {
+      "text": "Interprets effects on the natural count scale (not just log scale)",
+      "passed": true,
+      "evidence": "Effects are explicitly transformed from log scale to natural count scale throughout. ticket_model.py line 500: 'baseline_tickets = np.exp(intercept_samples)' with plot labeled 'Baseline tickets/day' and 'exp of intercept'. Line 515: 'release_multiplier = np.exp(beta_release_samples)' reported as 'Multiplicative effect on tickets'. Lines 534-540: day-of-week effects plotted as np.exp(beta_dow_mean) with xlabel 'Multiplicative effect on tickets'. Print statements at lines 558-559: 'Median multiplier on release days: {np.median(release_multiplier):.2f}x' and lines 564-565: 'Median baseline tickets/day: {np.median(baseline_tickets):.1f}'. Analysis_notes.md line 129: 'corresponding to a multiplicative effect of roughly 2.0-2.5x more tickets on release days'."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

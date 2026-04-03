@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+      "passed": true,
+      "evidence": "The model in school_model.py (lines 207-249) defines a full hierarchical model with hyperpriors mu_global, sigma_between (school-level variance), sigma_within (student-level variance), and school-level means mu_school derived via school_offset. The likelihood y_obs ~ Normal(mu_school[school_id], sigma_within) links student scores to school-level parameters."
+    },
+    {
+      "text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+      "passed": true,
+      "evidence": "Lines 223-224 of school_model.py: 'school_offset = pm.Normal(\"school_offset\", mu=0, sigma=1, shape=N_SCHOOLS)' followed by 'mu_school = pm.Deterministic(\"mu_school\", mu_global + sigma_between * school_offset)'. This is the standard non-centered parameterization. The analysis_notes.md also explains the rationale for avoiding the funnel geometry."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "Line 172 of school_model.py: 'prior_pred = pm.sample_prior_predictive(samples=500, random_seed=RANDOM_SEED)' is called within the prior_model context before the main hierarchical_model sampling. Prior predictive distributions are visualized in lines 175-200."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "Line 252 of school_model.py: 'post_pred = pm.sample_posterior_predictive(trace, random_seed=RANDOM_SEED)' is called after pm.sample() completes. The results are used for posterior predictive checks in lines 354-423."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "Both are used. Line 264: 'summary = az.summary(trace, var_names=[\"mu_global\", \"sigma_between\", \"sigma_within\", \"icc\", \"mu_school\"], round_to=2)'. Line 306: 'az.plot_trace(trace, var_names=[\"mu_global\", \"sigma_between\", \"sigma_within\", \"icc\"], figsize=(14, 10))'. Additionally, az.rhat(), az.ess(), az.plot_rank(), and az.plot_energy() are used for comprehensive diagnostics."
+    },
+    {
+      "text": "Includes shrinkage analysis showing small schools pulled toward grand mean",
+      "passed": true,
+      "evidence": "Lines 452-473 of school_model.py compute and print a detailed shrinkage table for each school showing observed mean, posterior mean, shrinkage percentage, and true mean, with small schools (n=5) showing the most shrinkage. Lines 480-528 produce a shrinkage visualization with arrows from observed to posterior means. The analysis_notes.md (lines 125-135) explicitly states 'Small schools (n=5) are shrunk the most toward the grand mean'."
+    },
+    {
+      "text": "Computes ICC (intraclass correlation) or variance partition coefficient",
+      "passed": true,
+      "evidence": "Line 229-231 of school_model.py: 'icc = pm.Deterministic(\"icc\", sigma_between**2 / (sigma_between**2 + sigma_within**2))' computes ICC as a derived quantity within the model. Lines 437-449 report ICC posterior statistics with 94% HDI. Lines 535-554 visualize the ICC posterior distribution with az.plot_posterior(). The analysis_notes.md provides detailed interpretation of ICC values."
+    },
+    {
+      "text": "Uses coords and dims in the PyMC model definition",
+      "passed": false,
+      "evidence": "Neither the prior_model (lines 153-168) nor the hierarchical_model (lines 207-249) use coords or dims arguments. Instead, the model uses 'shape=N_SCHOOLS' for the school_offset parameter and raw integer indexing 'data[\"school_id\"].values' for the likelihood. Modern PyMC best practice is to define coords={'school': school_names} and use dims='school' for labeled dimensions."
+    },
+    {
+      "text": "Reports credible intervals (94% HDI preferred) for school-level estimates",
+      "passed": true,
+      "evidence": "Line 369: 'posterior_hdi = az.hdi(trace, var_names=[\"mu_school\"])[\"mu_school\"].values' computes HDI for school means. Line 383 labels these as '94% HDI'. Lines 561-568 create a forest plot with 'hdi_prob=0.94'. Line 542 uses 'hdi_prob=0.94' for the ICC posterior plot. The variance decomposition section (lines 440-445) also reports 94% HDI intervals for sigma_between, sigma_within, and ICC."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 1,
+    "total": 9,
+    "pass_rate": 0.89
+  }
+}

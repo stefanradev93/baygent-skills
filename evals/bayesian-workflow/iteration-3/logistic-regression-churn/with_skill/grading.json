@@ -1,0 +1,85 @@
+{
+  "expectations": [
+    {
+      "text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+      "passed": true,
+      "evidence": "Line 145: pm.Bernoulli('churn_obs', logit_p=mu, observed=y_data, dims='obs_id') — uses pm.Bernoulli with logit_p parameterization (logit inverse-link)."
+    },
+    {
+      "text": "Standardizes or scales predictors before fitting the model",
+      "passed": true,
+      "evidence": "Lines 96-107: Predictors are explicitly standardized to zero mean and unit variance (df_z DataFrame with age_z, tenure_z, spend_z, tickets_z). Means and SDs are stored for back-transformation."
+    },
+    {
+      "text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+      "passed": true,
+      "evidence": "Line 136: beta = pm.Normal('beta', mu=0, sigma=1.5, dims='predictor') — sigma=1.5 is within the [1, 5] range. Line 129: alpha = pm.Normal('alpha', mu=0, sigma=1.5) also uses sigma=1.5. Both include justification comments."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "Line 159: prior_pred = pm.sample_prior_predictive(random_seed=rng) — called before pm.sample() on line 209."
+    },
+    {
+      "text": "Calls pm.sample() for MCMC inference without hardcoding chains (no chains=4 or similar)",
+      "passed": true,
+      "evidence": "Line 209: idata = pm.sample(nuts_sampler='nutpie', random_seed=rng) — no chains argument is passed. Comment on line 208 explicitly says 'Don't hardcode number of chains'."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "Line 271: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) — called after pm.sample()."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "Line 220: summary = az.summary(idata, round_to=3). Line 252: axes_trace = az.plot_trace(idata, kind='rank_vlines'). Both are used."
+    },
+    {
+      "text": "Reports 94% HDI (not 95% CI) for parameter estimates",
+      "passed": true,
+      "evidence": "Line 364: az.plot_forest(..., hdi_prob=0.94). Line 375: az.plot_posterior(..., hdi_prob=0.94). Line 418: '94% HDI' column header. Line 436: label='94% HDI'. Results consistently use 94% HDI throughout."
+    },
+    {
+      "text": "Uses coords and dims in the PyMC model definition",
+      "passed": true,
+      "evidence": "Lines 113-116: coords = {'predictor': predictor_names, 'obs_id': np.arange(N)}. Line 120: pm.Model(coords=coords). Lines 122-123: dims=('obs_id', 'predictor') and dims='obs_id'. Line 136: dims='predictor'."
+    },
+    {
+      "text": "Documents prior choices with justification comments in the code",
+      "passed": true,
+      "evidence": "Lines 126-135: Detailed comments explaining intercept prior (Normal(0, 1.5) covers base rates 5%-80% churn) and coefficient priors (sigma=1.5 allows 1-SD change to shift log-odds by +/-3, mapping probability from ~5% to ~95%)."
+    },
+    {
+      "text": "Uses a descriptive random seed (sum(map(ord, ...)) pattern or similar), not a magic number like 42",
+      "passed": true,
+      "evidence": "Line 47: RANDOM_SEED = sum(map(ord, 'churn-logistic-v1')) — uses the sum(map(ord, ...)) pattern with a descriptive analysis name."
+    },
+    {
+      "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar), not custom plotting code",
+      "passed": true,
+      "evidence": "Line 301: azp.plot_ppc_pit(idata) — uses arviz_plots' plot_ppc_pit function. Line 311: azp.plot_ppc_pit(idata, loo_pit=True) — also runs LOO-PIT calibration."
+    },
+    {
+      "text": "Saves InferenceData to disk (idata.to_netcdf or similar) after sampling",
+      "passed": true,
+      "evidence": "Line 275: idata.to_netcdf('churn_model_output.nc') — saves after posterior predictive sampling is complete."
+    },
+    {
+      "text": "Uses xarray operations (.sel, .mean(dim=...), etc.) over numpy for InferenceData manipulation",
+      "passed": true,
+      "evidence": "Lines 162-167: prior_churn_rates.mean(), .std(), .quantile() on xarray DataArray. Lines 285-290: idata.posterior_predictive['churn_obs'].mean(dim='obs_id'), .quantile(). Lines 399-414: xr.DataArray, xr.dot, .mean(dim=['chain', 'draw']), .quantile(dim=['chain', 'draw'])."
+    },
+    {
+      "text": "Generates a companion analysis notes file (markdown) interpreting the results",
+      "passed": false,
+      "evidence": "File not generated (subagent permission issue)"
+    }
+  ],
+  "summary": {
+    "passed": 14,
+    "failed": 1,
+    "total": 15,
+    "pass_rate": 0.93
+  }
+}

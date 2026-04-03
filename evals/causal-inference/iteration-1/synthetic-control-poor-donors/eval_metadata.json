@@ -1,0 +1,17 @@
+{
+  "eval_id": 4,
+  "eval_name": "synthetic-control-poor-donors",
+  "prompt": "California passed a major tobacco control program in 1988. I want to estimate its effect on per-capita cigarette sales using other US states as controls. I have annual cigarette sales data for all 50 states from 1970-2000. California is by far the largest state and had uniquely low smoking rates even before the program. Can you build a synthetic control analysis?",
+  "assertions": [
+    "Identifies this as a Synthetic Control design",
+    "Warns about the convex hull problem: California may be an outlier that donors can't approximate",
+    "Asks the user about California's pre-treatment characteristics relative to donor states",
+    "Uses CausalPy's SyntheticControl class with WeightedSumFitter",
+    "Checks pre-treatment fit quality (RMSE or visual comparison of synthetic vs actual California pre-1988)",
+    "If pre-treatment fit is poor, flags this as a threat to validity rather than ignoring it",
+    "Runs at least one robustness check: leave-one-out donors, placebo treatments on control states, or pre-treatment fit assessment",
+    "Reports the effect with uncertainty (credible interval or posterior distribution)",
+    "States limitations: if California is outside the convex hull of donors, the synthetic counterfactual may be unreliable",
+    "Does not make strong causal claims if pre-treatment fit is poor"
+  ]
+}

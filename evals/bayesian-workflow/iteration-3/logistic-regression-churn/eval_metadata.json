@@ -1,0 +1,22 @@
+{
+  "eval_id": 1,
+  "eval_name": "logistic-regression-churn",
+  "prompt": "I have customer churn data with 5000 rows \u2014 binary outcome (churned/not), plus age, tenure_months, monthly_spend, and support_tickets_last_90d. Build me a Bayesian logistic regression to predict churn probability with uncertainty estimates.",
+  "assertions": [
+    "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+    "Standardizes or scales predictors before fitting the model",
+    "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+    "Calls pm.sample_prior_predictive() before inference",
+    "Calls pm.sample() for MCMC inference without hardcoding chains (no chains=4 or similar)",
+    "Calls pm.sample_posterior_predictive() after inference",
+    "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+    "Reports 94% HDI (not 95% CI) for parameter estimates",
+    "Uses coords and dims in the PyMC model definition",
+    "Documents prior choices with justification comments in the code",
+    "Uses a descriptive random seed (sum(map(ord, ...)) pattern or similar), not a magic number like 42",
+    "Runs calibration checks using ArviZ (plot_ppc_pit or similar), not custom plotting code",
+    "Saves InferenceData to disk (idata.to_netcdf or similar) after sampling",
+    "Uses xarray operations (.sel, .mean(dim=...), etc.) over numpy for InferenceData manipulation",
+    "Generates a companion analysis notes file (markdown) interpreting the results"
+  ]
+}

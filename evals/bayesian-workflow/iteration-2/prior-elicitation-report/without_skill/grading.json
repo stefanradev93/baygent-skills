@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+      "passed": true,
+      "evidence": "In drug_trial_model.py lines 119-148, the code explicitly states 'The blood pressure difference could be anywhere from -20 to +5 mmHg' and translates this into 'drug_effect ~ Normal(-7.5, 5)' by centering at the midpoint of that range with SD=5, giving 95% prior mass between -17.5 and +2.5 mmHg. The report (medical_board_report.md Section 3) also documents this mapping in a table."
+    },
+    {
+      "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+      "passed": true,
+      "evidence": "Prior predictive checks are prominently used. drug_trial_model.py line 210 calls pm.sample_prior_predictive() and lines 191-196 explain the rationale: 'we sample from the priors alone to see what kind of data the model expects to generate. This is a sanity check.' The report Section 5.1 describes these checks for a non-technical audience. PreliZ is not mentioned, but the assertion uses 'or' and prior predictive checks are clearly present."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() to check priors",
+      "passed": true,
+      "evidence": "Line 210 of drug_trial_model.py: 'prior_pred = pm.sample_prior_predictive(samples=500, random_seed=RANDOM_SEED)'. The results are then inspected (lines 212-218) and visualized with a histogram (lines 221-236), saved as prior_predictive_check.png."
+    },
+    {
+      "text": "Documents prior justifications in the code or notes",
+      "passed": true,
+      "evidence": "Extensive prior justifications in drug_trial_model.py lines 117-148: each parameter (mu_control, drug_effect, sigma) has a multi-line comment explaining the choice, domain grounding, and implied 95% intervals. Lines 144-148 explicitly argue against flat priors. The report Section 3 provides an additional justification table mapping each prior to its rationale."
+    },
+    {
+      "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+      "passed": true,
+      "evidence": "Both are used. Line 292: 'az.summary(trace, var_names=[...], round_to=2)'. Line 314: 'az.plot_trace(trace, var_names=[...])'. Additionally, az.rhat() (line 297) and az.ess() (line 305) are computed with explicit threshold checks (R-hat < 1.01, ESS > 400) and printed status indicators."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive()",
+      "passed": true,
+      "evidence": "Line 286 of drug_trial_model.py: 'posterior_pred = pm.sample_posterior_predictive(trace, random_seed=RANDOM_SEED)'. Results are visualized in lines 380-409 comparing observed vs. predicted distributions for both treatment and control groups."
+    },
+    {
+      "text": "Generates a structured report suitable for a non-technical audience",
+      "passed": true,
+      "evidence": "medical_board_report.md is a 192-line structured report with: Executive Summary, Study Design table, 'Why Bayesian Analysis?' section, plain-language interpretation ('What does this mean in plain language?'), clinical significance context, model validation summary, sensitivity analysis, limitations, conclusions with actionable recommendations, and a Glossary of Terms appendix. Explicitly addressed to 'Medical Board Review'."
+    },
+    {
+      "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+      "passed": false,
+      "evidence": "The primary analysis uses Bayesian terminology throughout: 'credible interval', '94% HDI', 'posterior mean', 'probability of ANY BP reduction > 99%'. However, the report includes a Section 7 'Comparison with Traditional (Frequentist) Analysis' that explicitly states 'p-value < 0.001' and '95% Confidence interval'. Section 2 also mentions 'p-value' and 'significant'. While these appear in comparative/educational contexts rather than as the primary inferential framework, the assertion requires not using frequentist language, and it is present in the document."
+    },
+    {
+      "text": "Explains concepts in an accessible way for a Bayesian beginner",
+      "passed": true,
+      "evidence": "The report includes: a 'What does this mean in plain language?' subsection (Section 4.1), a full Glossary of Terms appendix defining 9 technical terms in beginner-friendly language, a 'Why Bayesian Analysis?' section (Section 2) with four bullet points explaining the approach's benefits, and plain-English summary of diagnostics (Section 5.2). The code comments also explain concepts like prior predictive checks in accessible terms."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 1,
+    "total": 9,
+    "pass_rate": 0.89
+  }
+}

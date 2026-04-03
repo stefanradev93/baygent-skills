@@ -1,0 +1,17 @@
+{
+  "eval_id": 3,
+  "eval_name": "rdd-scholarship-threshold",
+  "prompt": "Students who score above 80 on an entrance exam receive a scholarship. I want to estimate the causal effect of the scholarship on first-year GPA. I have data on 2000 students: exam_score (continuous, 40-100), received_scholarship (binary), first_year_gpa (continuous, 0-4.0), and some covariates (family_income, high_school_gpa). The threshold is 80. Build me a causal analysis.",
+  "assertions": [
+    "Identifies this as a Regression Discontinuity Design",
+    "Proposes a DAG or states the causal identification strategy (threshold assignment creates local randomization)",
+    "States the key assumption: no manipulation at the threshold (students can't precisely control their score)",
+    "Asks the user whether students could manipulate their score to be above/below 80",
+    "Uses CausalPy's RegressionDiscontinuity class",
+    "Uses a bandwidth parameter to restrict analysis to observations near the threshold",
+    "Runs at least one robustness check: bandwidth sensitivity, McCrary density test, placebo threshold, or covariate balance",
+    "Reports the Local Average Treatment Effect (LATE) at the threshold, not a global ATE",
+    "Notes that the effect is local to students near the 80-point threshold, not generalizable to all students",
+    "Reports the effect with a credible interval (HDI)"
+  ]
+}

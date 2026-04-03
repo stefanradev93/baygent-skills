@@ -1,0 +1,18 @@
+{
+  "expectations": [
+    {"text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function", "passed": true, "evidence": "pm.Bernoulli('churned', logit_p=logit_p, observed=y_data, dims='obs_id') uses logit_p parameter for logit inverse-link."},
+    {"text": "Standardizes or scales predictors before fitting the model", "passed": true, "evidence": "X = (X_raw - X_mean) / X_std — predictors are z-scored before model fitting."},
+    {"text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)", "passed": true, "evidence": "pm.Normal('beta', mu=0, sigma=1.5, dims='predictors') — sigma=1.5 is within [1, 5]."},
+    {"text": "Calls pm.sample_prior_predictive() before inference", "passed": true, "evidence": "pm.sample_prior_predictive(random_seed=rng) called before pm.sample()."},
+    {"text": "Calls pm.sample() for MCMC inference without hardcoding chains (no chains=4 or similar)", "passed": true, "evidence": "pm.sample(nuts_sampler='nutpie', random_seed=rng) — no chains argument."},
+    {"text": "Calls pm.sample_posterior_predictive() after inference", "passed": true, "evidence": "pm.sample_posterior_predictive(idata, random_seed=rng) called after sampling."},
+    {"text": "Uses az.summary() or az.plot_trace() for convergence diagnostics", "passed": true, "evidence": "az.summary(...) and az.plot_trace(...) both used."},
+    {"text": "Reports 94% HDI (not 95% CI) for parameter estimates", "passed": true, "evidence": "az.summary(..., hdi_prob=0.94), forest plot with hdi_prob=0.94, az.hdi(prob_vals, hdi_prob=0.94)."},
+    {"text": "Uses coords and dims in the PyMC model definition", "passed": true, "evidence": "coords dict defined and passed to pm.Model(coords=coords); dims used throughout."},
+    {"text": "Documents prior choices with justification comments in the code", "passed": true, "evidence": "Detailed justifications for intercept prior and coefficient priors with references to Gelman et al."},
+    {"text": "Uses a descriptive random seed (sum(map(ord, ...)) pattern or similar), not a magic number like 42", "passed": true, "evidence": "RANDOM_SEED = sum(map(ord, 'churn-logistic-v1')) — exact pattern used."},
+    {"text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar), not custom plotting code", "passed": true, "evidence": "azp.plot_ppc_pit(idata) and azp.plot_ppc_pit(idata, loo_pit=True) — ArviZ plots library used."},
+    {"text": "Saves InferenceData to disk (idata.to_netcdf or similar) after sampling", "passed": true, "evidence": "idata.to_netcdf(str(OUTPUT_DIR / 'churn_model_output.nc')) — saved immediately after sampling."}
+  ],
+  "summary": {"passed": 13, "failed": 0, "total": 13, "pass_rate": 1.0}
+}

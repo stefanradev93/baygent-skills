@@ -1,0 +1,86 @@
+[
+  {
+    "query": "I've got survey data from 3000 respondents across 12 regions and I want to estimate the probability that someone supports a policy change, accounting for regional variation. Some regions only have 30 respondents so I need the estimates to borrow strength. Can you build a Bayesian model for this?",
+    "should_trigger": true
+  },
+  {
+    "query": "my pymc model has like 200 divergences and rhat is 1.05 on the variance parameter. the trace plot for chain 3 looks totally flat. what's going wrong and how do i fix it?",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to compare two models for predicting patient readmission rates — one with just demographics and one adding hospital-level random effects. I have the InferenceData objects from both runs. Which model should I go with?",
+    "should_trigger": true
+  },
+  {
+    "query": "We're launching a new pricing experiment and I need to model conversion rates with uncertainty. We have about 10k visitors split across 4 price tiers, and I want posterior distributions over the conversion rate for each tier, not just point estimates. My team uses Python.",
+    "should_trigger": true
+  },
+  {
+    "query": "I want to set priors for a clinical trial model but I genuinely don't know what values to use. The treatment effect could plausibly be anywhere from -15 to +3 units. Can you help me translate that into a prior distribution and check if it makes sense?",
+    "should_trigger": true
+  },
+  {
+    "query": "can you build me a count regression for the number of workplace injuries per month at our 45 factories? i have the data in a csv — columns are factory_id, month, injury_count, num_employees, has_safety_program. the variance is way bigger than the mean so poisson probably won't cut it",
+    "should_trigger": true
+  },
+  {
+    "query": "I ran a Bayesian model yesterday and got results but I'm not sure I trust them. How do I check if the model actually fits the data well? I saved the inference data as a .nc file",
+    "should_trigger": true
+  },
+  {
+    "query": "My boss wants me to present our Bayesian analysis results to the executive team next week. They're not technical at all — no stats background. I need a report that explains what credible intervals mean, why we used this approach, and what the business implications are. The model is already fit, I just need help with the reporting.",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm trying to understand the effect of temperature on crop yield using data from 50 farms over 10 years. I want to account for the fact that farms might respond differently to temperature. Should I use a hierarchical model? Can you walk me through setting this up?",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to predict which customers will churn next quarter. I have a dataset with 50k rows, binary target, and about 20 features. I want to use XGBoost and tune hyperparameters with Optuna. Can you set up the training pipeline?",
+    "should_trigger": false
+  },
+  {
+    "query": "Can you help me build a neural network in PyTorch to classify images of skin lesions? I have about 10k labeled dermatology images in a folder structure organized by diagnosis.",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to run an A/B test analysis for our website redesign. We have 50k users in control and 50k in treatment with conversion rates of 3.2% vs 3.8%. Can you calculate the p-value and tell me if the difference is statistically significant?",
+    "should_trigger": false
+  },
+  {
+    "query": "I'm fitting a linear mixed model using statsmodels MixedLM to analyze student test scores nested within schools. Can you help me interpret the random effects output and the ICC?",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to forecast daily sales for the next 90 days using Prophet. I have 3 years of daily data with some holiday effects. Can you set up the model and tune the seasonality?",
+    "should_trigger": false
+  },
+  {
+    "query": "Help me build a recommendation system for our e-commerce site. We have user-item interaction data (clicks and purchases) for 100k users and 5k products. I'm thinking collaborative filtering with implicit feedback.",
+    "should_trigger": false
+  },
+  {
+    "query": "I'm doing exploratory data analysis on a dataset of house prices. Can you create some visualizations — scatter plots of price vs square footage, distribution of prices by neighborhood, correlation heatmap of the numeric features?",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to set up a scikit-learn pipeline that does imputation, one-hot encoding, and then fits a random forest classifier. My data has both numeric and categorical columns. Can you write the ColumnTransformer setup?",
+    "should_trigger": false
+  },
+  {
+    "query": "We have sensor data from IoT devices and I need to detect anomalies in real-time. Can you help me set up an isolation forest or autoencoder-based anomaly detection system in Python?",
+    "should_trigger": false
+  },
+  {
+    "query": "I'm building a causal inference analysis using DoWhy to estimate the average treatment effect of a marketing campaign. I have observational data with potential confounders. Can you help me set up the causal graph and run the estimation?",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to fit a Gaussian process regression to model the relationship between soil moisture and several environmental predictors. I have spatial data from 200 sampling locations. Can you set this up using scikit-learn's GaussianProcessRegressor?",
+    "should_trigger": false
+  },
+  {
+    "query": "I built a Bayesian model with informative priors from a previous study, but a reviewer is asking whether my conclusions are driven by the priors or the data. How do I check prior sensitivity without refitting the model multiple times? I have the InferenceData saved.",
+    "should_trigger": true
+  }
+]

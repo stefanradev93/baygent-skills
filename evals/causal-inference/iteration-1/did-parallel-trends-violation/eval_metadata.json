@@ -1,0 +1,17 @@
+{
+  "eval_id": 2,
+  "eval_name": "did-parallel-trends-violation",
+  "prompt": "I have panel data from 30 cities. In 2023, 15 cities introduced a soda tax, the other 15 didn't. I want to know if the soda tax reduced obesity rates. The data has columns: city_id, year (2018-2025), obesity_rate, group (1=tax, 0=no tax), post_tax. However, I should warn you: the treatment cities were already on a downward obesity trend before the tax was introduced, probably because they were richer cities with better healthcare access. Can you still estimate the causal effect?",
+  "assertions": [
+    "Identifies this as a DiD design but flags the pre-treatment trend difference as a threat",
+    "Does NOT blindly proceed with standard DiD without addressing the parallel trends violation",
+    "Explicitly states that parallel trends appears violated based on the user's description",
+    "Suggests checking pre-treatment trends visually or formally before proceeding",
+    "Either refuses to make causal claims OR uses an alternative method (synthetic control, conditional DiD, or adds group-specific time trends)",
+    "Asks the user about confounders (wealth, healthcare access) that might explain the differential trend",
+    "If it proceeds with estimation, runs a parallel trends test or placebo test and reports the result",
+    "Does NOT use causal language if parallel trends is violated (says 'associated with' not 'caused')",
+    "Reports limitations prominently — does not bury them",
+    "Acknowledges that the cities' self-selection into treatment (richer cities adopted the tax) is itself a confounding concern"
+  ]
+}
