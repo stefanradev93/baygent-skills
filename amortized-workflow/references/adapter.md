@@ -81,6 +81,8 @@ The simulator returns `N` as a scalar (or 0-d array) — a single value shared a
 
 Use this whenever the simulator outputs a scalar context variable (e.g., sample size, design parameter, temperature) that must later be concatenated with per-dataset tensors.
 
+For **conditional image generation**, apply the same principle spatially: if a condition starts as `(B, D)` but must be concatenated channel-wise with an image target `(B, H, W, C)`, broadcast or tile it to `(B, H, W, D)` in the adapter or simulator before concatenation.
+
 ### `.as_set(["x", "y"])`
 
 Marks `x` and `y` as exchangeable — converting them into matrices of shape `(N, 1)`. This is only needed for 1D sequences missing a trailing axis.
@@ -152,5 +154,6 @@ Steps execute sequentially. Common ordering conventions:
 - **Forgetting `.convert_dtype`** — NumPy defaults to `float64`; most backends default to `float32`. This mismatch causes runtime errors or silent type promotion.
 - **Concatenating before constraining** — if you concatenate parameters and then constrain, the constraint applies to the concatenated block, not individual columns. Always constrain before concatenating.
 - **Omitting `.broadcast` for scalar context variables (shared within batch)** — scalars passed as `inference_conditions` without broadcasting will fail or be silently dropped during batch assembly.
+- **Failing to spatially broadcast image conditions** — image diffusion backbones concatenate conditions channel-wise with the target image. Global conditions such as `(B, D)` must be expanded to `(B, H, W, D)` before concatenation.
 - **Using the naming shorthand with a custom adapter simultaneously** — if you pass `adapter=`, do not also pass `inference_variables=`, `summary_variables=`, etc. to `BasicWorkflow`; they will conflict.
 - **No need to call the adapter manually** - the adapter is part of an `approximator` and will always be called internally in the context of the appropriate call (e.g., forward, inverse).

@@ -1,5 +1,5 @@
 ---
-name: amortized-bayesian-workflow
+name: amortized-workflow
 description: >
   Opinionated amortized Bayesian workflow with BayesFlow for simulation-based inference (SBI).
   Contains critical guardrails that agents will usually not apply unprompted — always consult
@@ -33,7 +33,8 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
    - **"Simple vector"** means the observation is a **single fixed-length feature vector** whose element order is meaningful (e.g., 5 named sensor readings, a pre-computed summary statistic). Only then: route through `inference_conditions` with no summary network.
    - **Set-based / exchangeable data** — If the simulator produces **N observations that are exchangeable** (i.e., their joint likelihood is invariant to permutation), the data is a **set**, not a vector. This includes: N i.i.d. draws, regression datasets with (x, y) pairs, repeated measurements, trial-level data, cross-sectional samples. Route through `summary_variables` with a `SetTransformer`. **Never put this in `inference_conditions`.**
    - **Time series** — ordered sequences: route through `summary_variables` with `TimeSeriesTransformer` or `TimeSeriesNetwork`.
-   - **Images** — grid data: route through `summary_variables` with `ConvolutionalNetwork`.
+  - **Images as conditions / observations for parameter inference** — route through `summary_variables` with `ConvolutionalNetwork`.
+  - **Images as inferential targets** — conditional image generation, spatial field generation, denoising, and other image-valued outputs require an **image-capable diffusion inference network**. Use `bf.networks.DiffusionModel(subnet=...)` with `UNet`, `UViT`, or `ResidualUViT`; see `references/image-generation.md`.
    - **A workflow can use both slots simultaneously.** Fixed-length metadata (e.g., sample size N, scalar design variables) can go in `inference_conditions` while structured observations go in `summary_variables`.
    - **When in doubt, use a summary network.** It is always safer to include one than to omit one; a summary network will always be needed if the data has more than one axis.
 5. **Build the workflow** — Prefer `bf.BasicWorkflow(...)`
@@ -55,6 +56,7 @@ These rules are non-negotiable. Violating any of them will silently produce wron
 - **MUST start with the Small network configuration** from `references/model-sizes.md`. Scale up to Base or Large ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
 - **MUST use `workflow.simulate(N)` to generate test data** for diagnostics — not a Python for-loop over `simulator()`. The simulator returned by `bf.make_simulator` is a batched object; `workflow.simulate(N)` calls it efficiently and returns data in the format the workflow expects.
 - **MUST use `workflow.compute_default_diagnostics(test_data=...)` and `workflow.plot_default_diagnostics(test_data=...)`** for in-silico diagnostics. NEVER hand-roll coverage, bias, or calibration computations — the built-in methods are correct, complete, and consistent with the house thresholds.
+- **For image-valued inference targets, follow `references/image-generation.md`.** MUST use `bf.networks.DiffusionModel(subnet=...)` with `UNet`, `UViT`, or `ResidualUViT` — not the default low-dimensional setup. Conditions must be spatially concatenable with the image target (broadcast `(B, D)` to `(B, H, W, D)`). `scripts/check_diagnostics.py` does not apply; use visual sample grids instead.
 - **`workflow.sample()` returns original parameter names, NOT `"inference_variables"`.** The adapter's reverse transform restores the original keys from the simulator (e.g., `"alpha"`, `"beta"`, `"sigma"`). Each parameter has shape `(batch, num_samples)` for scalars or `(batch, num_samples, d)` for vectors. NEVER index into `"inference_variables"` — that key does not exist in the output.
 - **MUST reuse the existing simulator functions for PPCs.** NEVER re-implement the generative model by hand for posterior predictive checks. Loop over a subset of posterior draws (50 is a good default), indexing over the `num_samples` axis, and pass each draw through the simulator's forward model.
 - **MUST save `history.history` as JSON** (not CSV, not a DataFrame — it is a plain dict). Then run `scripts/inspect_training.py` or call `inspect_history()` in-process.
@@ -106,7 +108,9 @@ simulator = bf.make_simulator([my_prior, my_observation_model])
 # - SetTransformer if the data consists of N exchangeable observations (e.g., i.i.d. draws,
 #   regression datasets, repeated measurements). This is the MOST COMMON case.
 # - TimeSeriesTransformer / TimeSeriesNetwork for ordered sequences.
-# - ConvolutionalNetwork for image data.
+# - ConvolutionalNetwork for image data when the IMAGE is the condition / observation and the target is low-dimensional.
+# - If the TARGET itself is an image or spatial field, switch to the image-generation workflow in
+#   references/image-generation.md and use DiffusionModel(subnet=UNet/UViT/ResidualUViT).
 #
 # ALWAYS start with the SMALL config from references/model-sizes.md. Scale up only if diagnostics
 # show poor recovery or calibration after sufficient training.
@@ -295,12 +299,12 @@ Use a summary network (and route data through `summary_variables`) whenever obse
 - **Set-based / exchangeable data (most common case)**:
   - `bf.networks.SetTransformer` — **required default** for any model that generates N exchangeable observations
   - `bf.networks.DeepSet` — simpler baseline (discouraged)
-- **Images**:
+- **Images as conditions / observations for parameter inference**:
   - `bf.networks.ConvolutionalNetwork` - extensible default
 - **Time series**:
   - `bf.networks.TimeSeriesNetwork` — simplest default
   - `bf.networks.TimeSeriesTransformer` — stronger sequence model
-  - `bf.networks.FusionTransformer` — for more complex or multimodal sequential structure
+  - `bf.networks.FusionTransformer` — for more complex sequential structure
 As a heuristic, always start by setting the `summary_dim` argument to 2x the number of parameters to be estimated.
 
 ### Inference networks
@@ -312,6 +316,15 @@ For most posterior approximation tasks, default to one of:
 - `bf.networks.StableConsistencyModel()`
 
 Use **StableConsistencyModel** when very fast posterior sampling at deployment time is especially important.
+
+### Image-valued inference targets
+
+If the inferential target is an image, spatial field, or other grid-valued object, use the dedicated image-generation workflow in `references/image-generation.md`.
+
+- Default to `bf.networks.DiffusionModel(...)` with an image-capable subnet.
+- Choose subnet complexity in this order: `UNet` < `UViT` < `ResidualUViT`.
+- `ConvolutionalNetwork` is a **summary network for image conditions**, not the default choice for image-valued targets.
+- Ensure all conditioning information is channel-wise concatenable with the image target; broadcast global conditions from `(B, D)` to `(B, H, W, D)` before concatenation.
 
 ## Training inspection
 
@@ -349,6 +362,8 @@ After training, always:
 All `fit_*` methods pass `**kwargs` through to Keras `model.fit()`. Use `verbose=1` (default) for progress bars, `verbose=2` for one line per epoch, or `verbose=0` to suppress output. In non-interactive environments (e.g., scripts piped to a file), prefer `verbose=2`.
 
 ## Diagnostics gate
+
+This section applies to **low-dimensional inferential targets** such as scalar or vector parameters. For image-valued targets, do **not** use `scripts/check_diagnostics.py`; instead, save visual diagnostics and inspect a small grid of generated samples from held-out conditions.
 
 After computing diagnostics with `workflow.compute_default_diagnostics(test_data=..., as_data_frame=True)`, you **must** perform the following steps. Do not skip any of them.
 
@@ -390,24 +405,10 @@ After computing diagnostics, always:
 
 Both scripts can be run from the command line or imported as Python modules (see template above).
 
-## Critical rules
+## Additional rules
 
-- **Always perform simulation sanity checks before training.** Simulated data must look plausible relative to the real data and intended application regime.
-- **Follow best-practices in deep learning.** Always ensure that the estimator has converged and is not overfitting.
-- **Always pass `validation_data` to `fit_*` methods.** Use an integer to auto-simulate when a simulator is available.
-- **Always save and inspect the training History after fitting.** Use `scripts/inspect_training.py` or call `inspect_history()` in-process.
-- **Always save and check diagnostics against house thresholds.** Use `scripts/check_diagnostics.py` or call `check_diagnostics()` in-process. Never call `compute_default_diagnostics` without gating on the result.
 - **Only online training requires a simulator.** Offline and disk workflows only require simulated pairs from the correct generative process.
-- **Always use held-out simulations for diagnostics.** Never judge quality from training loss alone.
-- **Always run in-silico diagnostics before touching real data.** At minimum:
-  - parameter recovery
-  - calibration ECDF
-  - coverage
-  - z-score / contraction
-- **Always run posterior predictive checks on real data.** BayesFlow does not make PPCs automatic because they are model-specific; you must re-simulate from posterior draws and compare relevant summaries.
 - **Always keep preprocessing identical between training and inference.** Any transformation applied to simulations must also be applied to real data.
-- **Use a summary network for structured data.** Do not flatten images, time series, or sets unless there is a compelling reason.
-- **Treat collections of exchangeable observations as sets.** If the simulator produces N observations whose joint likelihood is permutation-invariant (i.i.d. draws, regression data, repeated measurements, cross-sectional samples), always use a `SetTransformer`. This is the most common case in statistical modeling. Never flatten N observations into a single long vector.
 - **Do not interpret posteriors from poor diagnostics.** A sharp posterior can still be badly calibrated and vice versa.
 - **Save checkpoints during training.** Neural posterior training can take time; preserve usable models and diagnostics.
 - **Document the simulation budget.** Report how many simulations, which prior, and which training mode were used.
@@ -486,8 +487,6 @@ General recipe:
 
 ## Common gotchas
 
-- **Accessing `"inference_variables"` from `workflow.sample()` output** — the adapter reverse-transforms the output so the returned dict has the **original parameter names** (e.g., `"alpha"`, `"beta"`), NOT `"inference_variables"`. Each parameter has shape `(batch, num_samples)` for scalars or `(batch, num_samples, d)` for vectors.
-- **Re-implementing the simulator for PPCs** — always reuse the existing prior/observation model functions. Loop over a subset of posterior draws (50 default) and pass each through the simulator.
 - **Using online training with a slow simulator** — switch to offline or disk training
 - **Training on simulations from the wrong prior** — networks may not generalize well to real data
 - **Using train simulations for diagnostics** — gives over-optimistic results
@@ -510,7 +509,7 @@ General recipe:
 
 ## Model sizes
 
-Always check `references/model-sizes.md` for rules on model sizes when choosing a summary backbone for a particular problem.
+Always check `references/model-sizes.md` for rules on model sizes when choosing a summary backbone and an inference network for a particular problem.
 
 ## Reporting template
 
