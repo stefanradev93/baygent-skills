@@ -307,6 +307,8 @@ Use a summary network (and route data through `summary_variables`) whenever obse
   - `bf.networks.FusionTransformer` — for more complex sequential structure
 As a heuristic, always start by setting the `summary_dim` argument to 2x the number of parameters to be estimated.
 
+- **Custom summary networks** — Only when the user explicitly requests one OR the data modality is non-typical (not images, time series, sets, or vectors). See `references/custom-summary.md`.
+
 ### Inference networks
 
 For most posterior approximation tasks, default to one of:
