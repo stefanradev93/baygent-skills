@@ -1,0 +1,17 @@
+{
+  "eval_id": 5,
+  "eval_name": "non-identifiable-mixture",
+  "prompt": "I have a simulator for a two-component Gaussian mixture: with probability w, draw from N(mu1, sigma), otherwise from N(mu2, sigma). The parameters are w, mu1, mu2, and sigma. I suspect mu1 and mu2 might not be fully identifiable when w is near 0.5 (label switching). Train a BayesFlow amortized estimator and use the diagnostics to assess whether the network can recover all parameters. Walk me through interpreting the diagnostics, especially if some parameters show poor recovery.",
+  "assertions": [
+    "Defines a Gaussian mixture simulator with parameters w, mu1, mu2, sigma",
+    "Uses bf.Adapter() with appropriate constraints (w between 0 and 1, sigma > 0)",
+    "Uses a SetTransformer for the i.i.d. mixture draws",
+    "Runs in-silico diagnostics with compute_default_diagnostics",
+    "Identifies or discusses potential non-identifiability (label switching) from diagnostics",
+    "Interprets posterior contraction — expects weak contraction for mu1/mu2 when w is near 0.5",
+    "Does NOT interpret poor diagnostics as good results — flags the issue",
+    "Checks ECE per parameter and discusses calibration in context of identifiability",
+    "Discusses or suggests remediation (e.g., ordering constraint mu1 < mu2, or accepting non-identifiability)",
+    "Does NOT skip diagnostics or proceed to real-data inference with poor recovery"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "expectations": [
+    {
+      "text": "Defines prior with correct support for all 4 parameters (beta>0, gamma>0, 0<i0<1, 0<p<1)",
+      "passed": true,
+      "evidence": "Lines 48-51: beta = rng.gamma(shape=2.0, scale=0.3) (positive support), gamma = rng.gamma(shape=2.0, scale=0.15) (positive support), i0 = rng.beta(a=2.0, b=50.0) (0,1 support), p = rng.beta(a=5.0, b=2.0) (0,1 support)."
+    },
+    {
+      "text": "Uses bf.Adapter() with explicit constraint handling",
+      "passed": true,
+      "evidence": "Lines 142-156: adapter = bf.Adapter() with .constrain() calls for all four parameters."
+    },
+    {
+      "text": "Calls .constrain() with lower=0 for beta and gamma",
+      "passed": true,
+      "evidence": "Line 147: .constrain(\"beta\", lower=0) and Line 148: .constrain(\"gamma\", lower=0)."
+    },
+    {
+      "text": "Calls .constrain() with lower=0, upper=1 for i0 and p",
+      "passed": true,
+      "evidence": "Line 149: .constrain(\"i0\", lower=0, upper=1) and Line 150: .constrain(\"p\", lower=0, upper=1)."
+    },
+    {
+      "text": "Routes the daily case counts through summary_variables (not inference_conditions)",
+      "passed": true,
+      "evidence": "Line 156: .concatenate([\"daily_cases\"], into=\"summary_variables\"). No inference_conditions key used anywhere in the adapter."
+    },
+    {
+      "text": "Uses a summary network appropriate for sequential data (TimeSeriesTransformer, TimeSeriesNetwork, or SetTransformer if treating days as exchangeable is justified and documented)",
+      "passed": true,
+      "evidence": "Line 120: summary_net = bf.networks.TimeSeriesTransformer(...). Analysis notes (line 19) justify the choice: 'Daily case counts have temporal ordering -- day 5 vs day 25 matters.'"
+    },
+    {
+      "text": "Starts with the Small model configuration from references/model-sizes.md",
+      "passed": false,
+      "evidence": "No reference to 'Small' configuration or references/model-sizes.md anywhere in the code or notes. The architecture uses custom values (embed_dims=(32,32), num_heads=(2,2), mlp_widths=(64,64), FlowMatching widths=(128,128)) that are not sourced from the skill's model-sizes reference."
+    },
+    {
+      "text": "Sets summary_dim to approximately 2x the number of parameters (around 8)",
+      "passed": true,
+      "evidence": "Line 121: summary_dim=8. Line 116 comment: '4 parameters -> summary_dim = 2 * num_params = 8'."
+    },
+    {
+      "text": "Passes validation_data= to the fit_* call",
+      "passed": true,
+      "evidence": "Line 185: validation_data=300 in workflow.fit_online() call."
+    },
+    {
+      "text": "Runs in-silico diagnostics before any real-data inference",
+      "passed": true,
+      "evidence": "Section 7 (lines 236-250) runs in-silico diagnostics with 300 simulated test datasets. Section 8 (lines 258+) performs inference on synthetic test data. Diagnostics come first."
+    },
+    {
+      "text": "Checks all 4 parameters individually against house thresholds",
+      "passed": false,
+      "evidence": "Lines 280-287 check individual parameter posterior coverage (95% CI containing truth), and lines 384-395 check constraint violations per parameter. However, neither section compares against predefined 'house thresholds' (e.g., R-squared > X, RMSE < Y, calibration error < Z). The code reports metrics but does not programmatically check them against threshold values."
+    },
+    {
+      "text": "Does NOT flatten the time series into inference_conditions",
+      "passed": true,
+      "evidence": "Line 156: daily_cases is routed into summary_variables. The string 'inference_conditions' does not appear anywhere in the code. The time series is preserved via .as_time_series([\"daily_cases\"]) on line 145."
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 2,
+    "total": 12,
+    "pass_rate": 0.83
+  }
+}

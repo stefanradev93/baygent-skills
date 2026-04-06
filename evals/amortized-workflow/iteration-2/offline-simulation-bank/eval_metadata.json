@@ -1,0 +1,18 @@
+{
+  "eval_id": 6,
+  "eval_name": "offline-simulation-bank",
+  "prompt": "I have a pre-generated simulation bank of 20,000 parameter-data pairs saved as .npz files in a directory. Each file contains 'parameters' (a vector of 3 values) and 'observables' (50 i.i.d. measurements). The original simulator is proprietary and I can't run it anymore. Train a BayesFlow amortized estimator using offline training. I need to hold out some data for validation and diagnostics.",
+  "assertions": [
+    "Uses workflow.fit_offline() or workflow.fit_disk() (not fit_online, since no simulator is available)",
+    "Splits the simulation bank into training and held-out validation/test sets",
+    "Does NOT attempt to create or call a simulator function (it's unavailable)",
+    "Uses the naming shorthand (inference_variables=, summary_variables=) since no adapter transforms are needed, OR uses an explicit adapter — either is acceptable",
+    "Routes observables through summary_variables with a summary network (not inference_conditions)",
+    "Uses a SetTransformer for the i.i.d. observations",
+    "Passes validation_data= to fit_offline or fit_disk",
+    "Saves and inspects training history",
+    "Uses the held-out test set for compute_default_diagnostics (not the training data)",
+    "Checks diagnostics against house thresholds before declaring success",
+    "Notes the limitation that posterior predictive checks require access to the simulator, which is unavailable"
+  ]
+}
