@@ -11,8 +11,10 @@ description: >
   StableConsistencyModel, summary networks, adapters, or simulation budgets.
 license: MIT
 metadata:
-  author: [Stefan T. Radev](https://bayesops.com)
-  version: "0.1"
+  author:
+    - [Stefan T. Radev](https://bayesops.com)
+    - [Alexandre Andorra](https://alexandorra.github.io/)
+  version: "1.0"
 ---
 
 # Amortized Bayesian Workflow

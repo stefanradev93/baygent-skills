@@ -15,7 +15,7 @@ baygent-skills/
 ├── causal-inference/           # Shipped skill (v1.0)
 │   ├── SKILL.md                # Main workflow instructions (depends on bayesian-workflow)
 │   └── references/             # DAGs, quasi-experiments, structural models, refutation, reporting
-├── amortized-workflow/         # In development (v0.1, PR #10 by Stefan Radev)
+├── amortized-workflow/         # Shipped skill (v1.0, co-authored with Stefan Radev)
 │   ├── SKILL.md                # Amortized Bayesian workflow with BayesFlow
 │   ├── references/             # Adapters, conditioning logic, model sizes
 │   └── scripts/                # Utility scripts (check_diagnostics.py, inspect_training.py)
