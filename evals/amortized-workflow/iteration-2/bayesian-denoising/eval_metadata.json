@@ -1,23 +1,21 @@
 {
-  "eval_id": 1,
-  "eval_name": "gaussian-location-scale",
-  "prompt": "I have a simple generative model: data is drawn from a Gaussian with unknown mean mu and standard deviation sigma. I can simulate from this model easily. I want to use BayesFlow to train an amortized posterior estimator so I can do instant inference on new datasets of 50 i.i.d. observations. Set this up end to end — from simulator to diagnostics to inference on a test dataset.",
+  "eval_id": 7,
+  "eval_name": "bayesian-denoising",
+  "prompt": "I want to run simulation-based inference for image-based Bayesian denoising. You need to download the Fashion MNIST dataset using keras (https://keras.io/api/datasets/fashion_mnist/). Treat the clean images as targets ('parameters') and the corresponding blurry images (you need to apply Gaussian blur) as conditions ('data'). Set up a BayesFlow workflow with proper handling of images as targets. Use a small subset of the train data as validation data.",
   "assertions": [
-    "Defines a prior function returning mu and sigma as a dict",
-    "Defines an observation model function that generates N i.i.d. draws given mu and sigma",
-    "Uses bf.make_simulator() to create the simulator (not a manual Python loop)",
+    "Defines a BasicWorkflow without an explicit simulator",
+    "Uses the clean images as inference_variables and the noisy images as inference_conditions",
+    "Does NOT flatten any of the images",
+    "Does NOT use a summary network (SetTransformer, DeepSet, ConvolutionalNetwork, etc.)",
+    "Uses a diffusion model or flow matching with a UNet architecture as a subnet",
+    "Uses the fit_offline method of a BasicWorkflow",
     "Uses bf.Adapter() with an explicit adapter chain (not just naming kwargs)",
-    "Calls .constrain('sigma', lower=0) in the adapter for the positive parameter",
-    "Calls .as_set() on the observations in the adapter",
     "Calls .convert_dtype('float64', 'float32') in the adapter",
-    "Uses a SetTransformer as the summary network (not DeepSet, not None)",
-    "Starts with the Small model configuration from references/model-sizes.md",
-    "Uses FlowMatching, DiffusionModel, or StableConsistencyModel as the inference network",
-    "Passes validation_data= to the fit_* call",
+    "Ensures conditioning tensor is spatially concatenable with the image target — same (B, H, W, C/D) shape",
+    "Passes validation_data= to the fit_offline call",
     "Saves history.history as JSON and runs inspect_training or equivalent convergence check",
-    "Uses workflow.simulate() for generating test data (not a Python loop)",
-    "Calls workflow.compute_default_diagnostics() and workflow.plot_default_diagnostics()",
-    "Runs check_diagnostics or manually checks ECE and NRMSE against house thresholds",
-    "Accesses posterior samples by original parameter names (mu, sigma), NOT 'inference_variables'"
+    "Does NOT run scripts/check_diagnostics.py or conventional in-silico diagnostics for low-dimensional problems",
+    "Creates and inspects a few posterior clean images for a few test examples (visual sample grid)",
+    "References or follows references/image-generation.md guidance"
   ]
 }

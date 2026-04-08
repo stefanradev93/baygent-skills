@@ -1,249 +1,81 @@
 """
-Amortized Bayesian Inference for Linear Regression with Variable Sample Sizes
-==============================================================================
-
-Uses BayesFlow 2.x to train a neural posterior estimator that handles
-datasets with N in [10, 200]. Once trained, posterior inference for any
-new dataset in that range is a single forward pass (~milliseconds).
-
-Model:
-    y_i = alpha + beta * x_i + eps_i,   eps_i ~ Normal(0, sigma)
-
-Priors:
-    alpha ~ Normal(0, 5)
-    beta  ~ Normal(0, 5)
-    sigma ~ HalfNormal(2)
+Amortized Bayesian inference for linear regression with variable sample size N.
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import bayesflow as bf
 
-# ---------------------------------------------------------------------------
-# Reproducibility
-# ---------------------------------------------------------------------------
-RANDOM_SEED = sum(map(ord, "linear-regression-varying-n"))
-RNG = np.random.default_rng(RANDOM_SEED)
+def meta_fn():
+    N = np.random.randint(10, 201)
+    return {"N": N}
 
-# ---------------------------------------------------------------------------
-# 1. Simulator components
-# ---------------------------------------------------------------------------
-PARAM_NAMES = ["alpha", "beta", "sigma"]
-N_MIN, N_MAX = 10, 200
+def prior_fn():
+    alpha = np.random.normal(0.0, 5.0)
+    beta = np.random.normal(0.0, 2.0)
+    sigma = np.abs(np.random.normal(0.0, 1.0)) + 1e-3
+    return {"alpha": alpha, "beta": beta, "sigma": sigma}
 
+def observation_model(alpha, beta, sigma, N):
+    x = np.random.uniform(-3.0, 3.0, size=(N,))
+    y = alpha + beta * x + np.random.normal(0.0, sigma, size=(N,))
+    return {"x": x, "y": y, "N": N}
 
-@bf.simulators.make_simulator
-def prior(batch_size, rng=None):
-    """Draw from the joint prior over (alpha, beta, sigma)."""
-    rng = rng or np.random.default_rng()
-    alpha = rng.normal(loc=0.0, scale=5.0, size=(batch_size, 1))
-    beta = rng.normal(loc=0.0, scale=5.0, size=(batch_size, 1))
-    sigma = np.abs(rng.normal(loc=0.0, scale=2.0, size=(batch_size, 1)))
-    # Clip sigma away from zero for numerical safety
-    sigma = np.clip(sigma, 1e-4, None)
-    return {"parameters": np.concatenate([alpha, beta, sigma], axis=-1)}
+simulator = bf.make_simulator([prior_fn, observation_model], meta_fn=meta_fn)
 
-
-@bf.simulators.make_simulator
-def likelihood(parameters, batch_size, rng=None):
-    """
-    Generate (x, y) pairs for a linear regression.
-
-    Each simulated dataset gets a random N ~ Uniform{N_MIN, ..., N_MAX}.
-    To enable batching with variable N, we pad to N_MAX and return a
-    boolean mask indicating which observations are real.
-    """
-    rng = rng or np.random.default_rng()
-
-    all_obs = np.zeros((batch_size, N_MAX, 2), dtype=np.float32)
-    all_masks = np.zeros((batch_size, N_MAX, 1), dtype=np.float32)
-
-    for i in range(batch_size):
-        n = rng.integers(N_MIN, N_MAX + 1)
-        x = rng.normal(loc=0.0, scale=1.0, size=n)
-        alpha, beta, sigma = parameters[i]
-        y = alpha + beta * x + rng.normal(0.0, sigma, size=n)
-
-        # Stack (x, y) as a 2-column matrix
-        all_obs[i, :n, 0] = x
-        all_obs[i, :n, 1] = y
-        all_masks[i, :n, 0] = 1.0
-
-    return {
-        "observables": all_obs,
-        "mask": all_masks,
-    }
-
-
-simulator = bf.simulators.TwoLevelSimulator(prior, likelihood)
-
-# ---------------------------------------------------------------------------
-# 2. Adapter — bridge simulator outputs to network inputs
-# ---------------------------------------------------------------------------
-# The adapter tells BayesFlow how to rename / reshape simulator outputs
-# into the dict keys the network expects.
 adapter = (
     bf.Adapter()
-    .rename("parameters", "inference_variables")
-    .rename("observables", "summary_variables")
-    .rename("mask", "summary_mask")
+    .concatenate(["x", "y"], into="summary_variables", axis=-1)
+    .as_set("summary_variables")
+    .apply(np.sqrt, to="N", resulting_in="sqrt_N")
+    .rename("sqrt_N", "inference_conditions")
+    .constrain("sigma", lower=0.0)
+    .rename(["alpha", "beta", "sigma"], "inference_variables")
+    .drop(["x", "y", "N"])
 )
 
-# ---------------------------------------------------------------------------
-# 3. Summary network — handles variable-length sets
-# ---------------------------------------------------------------------------
-# A SetTransformer (DeepSets variant) naturally handles variable-size inputs
-# via masking.  It produces a fixed-dimensional summary vector regardless of N.
-summary_net = bf.networks.SetTransformer(
-    input_dim=2,          # each observation is (x, y)
-    summary_dim=32,       # output summary vector length
-    num_attention_heads=4,
-    num_dense_layers=2,
-    dense_units=128,
-)
+summary_network = bf.networks.SetTransformer(input_dim=2, output_dim=64)
+inference_network = bf.networks.CouplingFlow(num_layers=6, subnet_kwargs={"units": 128, "activation": "relu"})
 
-# ---------------------------------------------------------------------------
-# 4. Inference network — conditional normalizing flow
-# ---------------------------------------------------------------------------
-inference_net = bf.networks.CouplingFlow(
-    num_params=len(PARAM_NAMES),
-    num_coupling_layers=6,
-    coupling_settings={"dense_units": 128, "num_dense_layers": 2},
-)
-
-# ---------------------------------------------------------------------------
-# 5. Approximator — ties everything together
-# ---------------------------------------------------------------------------
 workflow = bf.BasicWorkflow(
-    simulator=simulator,
-    adapter=adapter,
-    summary_network=summary_net,
-    inference_network=inference_net,
+    simulator=simulator, adapter=adapter,
+    summary_network=summary_network, inference_network=inference_network,
+    inference_conditions_dim=1,
 )
 
-# ---------------------------------------------------------------------------
-# 6. Training
-# ---------------------------------------------------------------------------
-EPOCHS = 50
-BATCH_SIZE = 64
-SIMULATIONS_PER_EPOCH = 1000
+RANDOM_SEED = sum(map(ord, "regression-varying-n"))
+np.random.seed(RANDOM_SEED)
 
-print("Starting training...")
-history = workflow.fit(
-    epochs=EPOCHS,
-    batch_size=BATCH_SIZE,
-    simulations_per_epoch=SIMULATIONS_PER_EPOCH,
-)
+train_data = simulator.sample(2000)
+val_data = simulator.sample(400)
 
-# Plot training loss
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(history["loss"])
-ax.set(xlabel="Epoch", ylabel="Loss", title="Training loss")
-ax.grid(True, alpha=0.3)
-fig.tight_layout()
-fig.savefig("training_loss.png", dpi=150)
-plt.close(fig)
-print("Saved training_loss.png")
+history = workflow.fit_offline(train_data, epochs=50, batch_size=32, validation_data=val_data)
 
-# ---------------------------------------------------------------------------
-# 7. Simulation-Based Calibration (SBC)
-# ---------------------------------------------------------------------------
-print("Running SBC diagnostics (500 datasets)...")
-num_sbc = 500
-sbc_results = workflow.simulate_and_infer(num_datasets=num_sbc, num_samples=1000)
+diagnostics_data = simulator.sample(500)
+diagnostics = workflow.compute_default_diagnostics(diagnostics_data)
+print("Default diagnostics:", diagnostics)
 
-fig = bf.diagnostics.plot_sbc_histograms(
-    sbc_results,
-    param_names=PARAM_NAMES,
-)
-fig.savefig("sbc_histograms.png", dpi=150)
-plt.close(fig)
-print("Saved sbc_histograms.png")
+new_meta = meta_fn()
+new_params = prior_fn()
+new_obs = observation_model(**new_params, **new_meta)
 
-# ECDF-based calibration check
-fig = bf.diagnostics.plot_sbc_ecdf(
-    sbc_results,
-    param_names=PARAM_NAMES,
-)
-fig.savefig("sbc_ecdf.png", dpi=150)
-plt.close(fig)
-print("Saved sbc_ecdf.png")
+posterior_samples = workflow.sample_posterior(num_samples=2000, conditions=new_obs)
 
-# ---------------------------------------------------------------------------
-# 8. Posterior z-score / contraction diagnostic
-# ---------------------------------------------------------------------------
-fig = bf.diagnostics.plot_z_score_contraction(
-    sbc_results,
-    param_names=PARAM_NAMES,
-)
-fig.savefig("z_score_contraction.png", dpi=150)
-plt.close(fig)
-print("Saved z_score_contraction.png")
+for param in ["alpha", "beta", "sigma"]:
+    samples = posterior_samples[param]
+    print(f"  {param}: {samples.mean():.3f}  (true: {new_params[param]:.3f})")
 
-# ---------------------------------------------------------------------------
-# 9. Inference on a specific observed dataset
-# ---------------------------------------------------------------------------
-print("\n--- Inference on a test dataset ---")
-TRUE_ALPHA, TRUE_BETA, TRUE_SIGMA = 2.0, -1.5, 0.8
-N_OBS = 50
+def posterior_predictive_check(posterior_samples, x_new, n_ppc=200):
+    n_draws = min(n_ppc, len(posterior_samples["alpha"]))
+    ppc_ys = []
+    N_new = len(x_new)
+    for i in range(n_draws):
+        alpha_i = posterior_samples["alpha"][i]
+        beta_i = posterior_samples["beta"][i]
+        sigma_i = posterior_samples["sigma"][i]
+        y_i = alpha_i + beta_i * x_new + np.random.normal(0, sigma_i, size=N_new)
+        ppc_ys.append(y_i)
+    return np.array(ppc_ys)
 
-rng_test = np.random.default_rng(42)
-x_obs = rng_test.normal(0, 1, size=N_OBS)
-y_obs = TRUE_ALPHA + TRUE_BETA * x_obs + rng_test.normal(0, TRUE_SIGMA, size=N_OBS)
-
-# Pad to N_MAX for the network
-obs_padded = np.zeros((1, N_MAX, 2), dtype=np.float32)
-mask_padded = np.zeros((1, N_MAX, 1), dtype=np.float32)
-obs_padded[0, :N_OBS, 0] = x_obs
-obs_padded[0, :N_OBS, 1] = y_obs
-mask_padded[0, :N_OBS, 0] = 1.0
-
-# Draw posterior samples
-posterior_samples = workflow.infer(
-    {"summary_variables": obs_padded, "summary_mask": mask_padded},
-    num_samples=4000,
-)
-
-# Print summary
-samples = posterior_samples[0]  # shape (num_samples, num_params)
-print(f"\nTrue values:  alpha={TRUE_ALPHA}, beta={TRUE_BETA}, sigma={TRUE_SIGMA}")
-print(f"Posterior means: alpha={samples[:, 0].mean():.3f}, "
-      f"beta={samples[:, 1].mean():.3f}, sigma={samples[:, 2].mean():.3f}")
-print(f"Posterior stds:  alpha={samples[:, 0].std():.3f}, "
-      f"beta={samples[:, 1].std():.3f}, sigma={samples[:, 2].std():.3f}")
-
-# Posterior pair plot
-fig = bf.diagnostics.plot_posterior(
-    samples,
-    param_names=PARAM_NAMES,
-    true_values=[TRUE_ALPHA, TRUE_BETA, TRUE_SIGMA],
-)
-fig.savefig("posterior_pairplot.png", dpi=150)
-plt.close(fig)
-print("Saved posterior_pairplot.png")
-
-# ---------------------------------------------------------------------------
-# 10. Test across different sample sizes to verify generalization
-# ---------------------------------------------------------------------------
-print("\n--- Checking posterior quality across sample sizes ---")
-test_sizes = [10, 25, 50, 100, 200]
-for n in test_sizes:
-    x_test = rng_test.normal(0, 1, size=n)
-    y_test = TRUE_ALPHA + TRUE_BETA * x_test + rng_test.normal(0, TRUE_SIGMA, size=n)
-
-    obs_pad = np.zeros((1, N_MAX, 2), dtype=np.float32)
-    mask_pad = np.zeros((1, N_MAX, 1), dtype=np.float32)
-    obs_pad[0, :n, 0] = x_test
-    obs_pad[0, :n, 1] = y_test
-    mask_pad[0, :n, 0] = 1.0
-
-    post = workflow.infer(
-        {"summary_variables": obs_pad, "summary_mask": mask_pad},
-        num_samples=2000,
-    )
-    s = post[0]
-    print(f"  N={n:3d} | alpha={s[:, 0].mean():+.2f} (sd {s[:, 0].std():.2f}) | "
-          f"beta={s[:, 1].mean():+.2f} (sd {s[:, 1].std():.2f}) | "
-          f"sigma={s[:, 2].mean():.2f} (sd {s[:, 2].std():.2f})")
-
-print("\nDone.")
+x_test = np.linspace(-3, 3, 50)
+ppc = posterior_predictive_check(posterior_samples, x_test)
+print(f"PPC shape: {ppc.shape}")

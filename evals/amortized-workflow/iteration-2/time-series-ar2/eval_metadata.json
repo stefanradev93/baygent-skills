@@ -1,18 +1,18 @@
 {
-  "eval_id": 7,
-  "eval_name": "bayesian-denoising",
-  "prompt": "I want to run simulation-based inference for image-based Bayesian denoising. You need to download the Fashion MNIST dataset usng keras (https://keras.io/api/datasets/fashion_mnist/). Treat the clean images as targets ('parameters') and the corresponding blurry images (you need to apply Gaussian blur) as conditions ('data'). Set up a BayesFlow workflow with proper handling of images as targets. Use a small subset of the train data as validation data.",
+  "eval_id": 4,
+  "eval_name": "time-series-ar2",
+  "prompt": "I have a simulator for an AR(2) time series process: y_t = phi1 * y_{t-1} + phi2 * y_{t-2} + noise(sigma). I want to use BayesFlow to do amortized inference on the three parameters (phi1, phi2, sigma) from observed sequences of length 100. The ordering of observations matters here — this is temporal, not exchangeable. Set up the workflow with the right architecture.",
   "assertions": [
-    "Defines a BasicWorkflow without an explicit simulator",
-    "Uses the clean images as inference_variables and the noisy images as inference_conditions",
-    "Does NOT flatten any of the images",
-    "Does NOT use a summary network",
-    "Uses a diffusion model or flow matching with a UNet architecture as a subnet",
-    "Uses the fit_offline method of a BasicWorkflow",
+    "Defines a simulator that generates AR(2) time series of length 100",
+    "Routes the time series through summary_variables (not inference_conditions)",
+    "Does NOT use SetTransformer for the time series data",
+    "Uses TimeSeriesTransformer, TimeSeriesNetwork, or FusionTransformer as the summary network",
+    "Calls .constrain('sigma', lower=0) for the noise standard deviation",
+    "Does NOT flatten the time series into a single vector for inference_conditions",
     "Starts with the Small model configuration from references/model-sizes.md",
-    "Passes validation_data= to the fit_offline call",
+    "Passes validation_data= to the fit_* call",
     "Saves and inspects training history (JSON + inspect_training or equivalent)",
-    "Does NOT run conventional in-silico diagnostics for low-dimensional problems",
-    "Creates and inspects a few posterior clean images for a few test examples"
+    "Runs in-silico diagnostics and checks against house thresholds",
+    "Accesses posterior samples by original names (phi1, phi2, sigma), NOT 'inference_variables'"
   ]
 }

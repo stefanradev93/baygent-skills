@@ -1,65 +1,65 @@
 {
-  "expectations": [
+  "scenario": "offline-simulation-bank",
+  "condition": "with_skill",
+  "total_assertions": 11,
+  "passed": 11,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "assertions": [
     {
-      "text": "Uses workflow.fit_offline() or workflow.fit_disk() (not fit_online, since no simulator is available)",
-      "passed": true,
-      "evidence": "Line 174: `history = workflow.fit_offline(` — uses fit_offline with train_data dict."
+      "assertion": "Uses workflow.fit_offline() or workflow.fit_disk() (not fit_online, since no simulator is available)",
+      "result": "pass",
+      "evidence": "Line 174: history = workflow.fit_offline( — uses fit_offline with train_data dict."
     },
     {
-      "text": "Splits the simulation bank into training and held-out validation/test sets",
-      "passed": true,
-      "evidence": "Lines 37-39 define N_TEST=500, N_VAL=500, N_TRAIN=19000. Lines 104-120 perform the split via random permutation into train_data, val_data, test_data dicts."
+      "assertion": "Splits the simulation bank into training and held-out validation/test sets",
+      "result": "pass",
+      "evidence": "Lines 37-39: N_TEST=500, N_VAL=500, N_TRAIN=19000. Lines 104-120: split via random permutation into train_data, val_data, test_data dicts."
     },
     {
-      "text": "Does NOT attempt to create or call a simulator function (it's unavailable)",
-      "passed": true,
-      "evidence": "No simulator function is defined or called anywhere in the script. Data is loaded from .npz files (lines 53-72). Lines 259-268 explicitly note the simulator is unavailable."
+      "assertion": "Does NOT attempt to create or call a simulator function (it's unavailable)",
+      "result": "pass",
+      "evidence": "No simulator function defined or called. Data is loaded from .npz files (lines 53-72). Lines 259-268 explicitly note the simulator is unavailable."
     },
     {
-      "text": "Uses the naming shorthand (inference_variables=, summary_variables=) since no adapter transforms are needed, OR uses an explicit adapter — either is acceptable",
-      "passed": true,
-      "evidence": "Lines 131-137: Uses an explicit `bf.Adapter()` chain with .as_set, .convert_dtype, and .concatenate into summary_variables and inference_variables."
+      "assertion": "Uses the naming shorthand (inference_variables=, summary_variables=) since no adapter transforms are needed, OR uses an explicit adapter — either is acceptable",
+      "result": "pass",
+      "evidence": "Lines 131-137: explicit bf.Adapter() chain with .as_set, .convert_dtype, and .concatenate into summary_variables and inference_variables."
     },
     {
-      "text": "Routes observables through summary_variables with a summary network (not inference_conditions)",
-      "passed": true,
-      "evidence": "Line 135: `.concatenate([\"observables\"], into=\"summary_variables\")`. Line 144: `summary_net = bf.networks.SetTransformer(...)`. Line 163: `summary_network=summary_net` passed to BasicWorkflow."
+      "assertion": "Routes observables through summary_variables with a summary network (not inference_conditions)",
+      "result": "pass",
+      "evidence": "Line 135: .concatenate([\"observables\"], into=\"summary_variables\"). Line 144: summary_net = bf.networks.SetTransformer(...). Line 163: summary_network=summary_net passed to BasicWorkflow."
     },
     {
-      "text": "Uses a SetTransformer for the i.i.d. observations",
-      "passed": true,
-      "evidence": "Lines 144-150: `summary_net = bf.networks.SetTransformer(summary_dim=SUMMARY_DIM, embed_dims=(32, 32), num_heads=(2, 2), ...)`. Also line 132: `.as_set([\"observables\"])` correctly reshapes for the SetTransformer."
+      "assertion": "Uses a SetTransformer for the i.i.d. observations",
+      "result": "pass",
+      "evidence": "Lines 144-150: summary_net = bf.networks.SetTransformer(summary_dim=SUMMARY_DIM, embed_dims=(32, 32), num_heads=(2, 2), ...). Line 132: .as_set([\"observables\"]) reshapes for SetTransformer."
     },
     {
-      "text": "Passes validation_data= to fit_offline or fit_disk",
-      "passed": true,
-      "evidence": "Line 178: `validation_data=val_data,` passed to workflow.fit_offline()."
+      "assertion": "Passes validation_data= to fit_offline or fit_disk",
+      "result": "pass",
+      "evidence": "Line 178: validation_data=val_data, passed to workflow.fit_offline()."
     },
     {
-      "text": "Saves and inspects training history",
-      "passed": true,
-      "evidence": "Lines 183-186: Saves history to JSON file. Lines 191-199: Calls `inspect_history(history.history)` and prints the training convergence report, checking for issues."
+      "assertion": "Saves and inspects training history",
+      "result": "pass",
+      "evidence": "Lines 183-186: saves history to JSON file. Lines 191-199: calls inspect_history(history.history) and prints training convergence report."
     },
     {
-      "text": "Uses the held-out test set for compute_default_diagnostics (not the training data)",
-      "passed": true,
-      "evidence": "Line 218: `metrics = workflow.compute_default_diagnostics(test_data=test_data, ...)` — uses test_data (lines 117-120), which is built from test_idx (line 107), completely disjoint from training indices."
+      "assertion": "Uses the held-out test set for compute_default_diagnostics (not the training data)",
+      "result": "pass",
+      "evidence": "Line 218: metrics = workflow.compute_default_diagnostics(test_data=test_data, ...) — uses test_data built from test_idx (line 107), completely disjoint from training indices."
     },
     {
-      "text": "Checks diagnostics against house thresholds before declaring success",
-      "passed": true,
-      "evidence": "Lines 229-242: Calls `check_diagnostics(metrics)` and checks `diag_report[\"overall\"][\"decision\"]` — raises RuntimeError on STOP, prints warning on WARN, declares pass otherwise. Analysis notes (lines 54-58) document the specific thresholds."
+      "assertion": "Checks diagnostics against house thresholds before declaring success",
+      "result": "pass",
+      "evidence": "Lines 229-242: calls check_diagnostics(metrics), checks diag_report[\"overall\"][\"decision\"], raises RuntimeError on STOP, prints warning on WARN. Analysis notes document specific thresholds."
     },
     {
-      "text": "Notes the limitation that posterior predictive checks require access to the simulator, which is unavailable",
-      "passed": true,
-      "evidence": "Lines 259-268 in the code: comments and print statements explicitly state PPCs are not possible without the original simulator. Analysis notes line 47: \"No PPCs possible. The simulator is unavailable, so we cannot re-simulate from posterior draws.\""
+      "assertion": "Notes the limitation that posterior predictive checks require access to the simulator, which is unavailable",
+      "result": "pass",
+      "evidence": "Lines 259-268: comments and print statements explicitly state PPCs are not possible without the original simulator. Analysis notes line 47: 'No PPCs possible. The simulator is unavailable.'"
     }
-  ],
-  "summary": {
-    "passed": 11,
-    "failed": 0,
-    "total": 11,
-    "pass_rate": 1.0
-  }
+  ]
 }

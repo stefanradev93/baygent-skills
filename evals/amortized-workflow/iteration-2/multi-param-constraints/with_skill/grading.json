@@ -1,70 +1,70 @@
 {
-  "expectations": [
+  "scenario": "multi-param-constraints",
+  "condition": "with_skill",
+  "total_assertions": 12,
+  "passed": 12,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "assertions": [
     {
-      "text": "Defines prior with correct support for all 4 parameters (beta>0, gamma>0, 0<i0<1, 0<p<1)",
-      "passed": true,
-      "evidence": "Lines 54-59: beta ~ Gamma(2, 0.3) (positive), gamma ~ Gamma(2, 0.15) (positive), i0 ~ Beta(2, 50) (0,1), p ~ Beta(5, 2) (0,1). All supports are correct."
+      "assertion": "Defines prior with correct support for all 4 parameters (beta>0, gamma>0, 0<i0<1, 0<p<1)",
+      "result": "pass",
+      "evidence": "Lines 54-59: beta ~ Gamma(2, 0.3) (positive), gamma ~ Gamma(2, 0.15) (positive), i0 ~ Beta(2, 50) (0,1), p ~ Beta(5, 2) (0,1)."
     },
     {
-      "text": "Uses bf.Adapter() with explicit constraint handling",
-      "passed": true,
-      "evidence": "Lines 118-132: `adapter = bf.Adapter()` with `.constrain()` calls for all 4 parameters."
+      "assertion": "Uses bf.Adapter() with explicit constraint handling",
+      "result": "pass",
+      "evidence": "Lines 118-132: adapter = bf.Adapter() with .constrain() calls for all 4 parameters."
     },
     {
-      "text": "Calls .constrain() with lower=0 for beta and gamma",
-      "passed": true,
-      "evidence": "Line 123: `.constrain(\"beta\", lower=0)` and Line 124: `.constrain(\"gamma\", lower=0)`."
+      "assertion": "Calls .constrain() with lower=0 for beta and gamma",
+      "result": "pass",
+      "evidence": "Line 123: .constrain(\"beta\", lower=0) and Line 124: .constrain(\"gamma\", lower=0)."
     },
     {
-      "text": "Calls .constrain() with lower=0, upper=1 for i0 and p",
-      "passed": true,
-      "evidence": "Line 125: `.constrain(\"i0\", lower=0, upper=1)` and Line 126: `.constrain(\"p\", lower=0, upper=1)`."
+      "assertion": "Calls .constrain() with lower=0, upper=1 for i0 and p",
+      "result": "pass",
+      "evidence": "Line 125: .constrain(\"i0\", lower=0, upper=1) and Line 126: .constrain(\"p\", lower=0, upper=1)."
     },
     {
-      "text": "Routes the daily case counts through summary_variables (not inference_conditions)",
-      "passed": true,
-      "evidence": "Line 132: `.concatenate([\"daily_cases\"], into=\"summary_variables\")`. No inference_conditions routing present."
+      "assertion": "Routes the daily case counts through summary_variables (not inference_conditions)",
+      "result": "pass",
+      "evidence": "Line 132: .concatenate([\"daily_cases\"], into=\"summary_variables\"). No inference_conditions routing present."
     },
     {
-      "text": "Uses a summary network appropriate for sequential data (TimeSeriesTransformer, TimeSeriesNetwork, or SetTransformer if treating days as exchangeable is justified and documented)",
-      "passed": true,
-      "evidence": "Lines 97-105: `bf.networks.TimeSeriesTransformer(...)` used. Analysis notes (lines 19-20) explicitly justify: 'Daily case counts over 30 days are an ordered sequence -- day order matters for epidemic dynamics. A SetTransformer would destroy temporal structure.'"
+      "assertion": "Uses a summary network appropriate for sequential data (TimeSeriesTransformer, TimeSeriesNetwork, or SetTransformer if treating days as exchangeable is justified and documented)",
+      "result": "pass",
+      "evidence": "Lines 97-105: bf.networks.TimeSeriesTransformer(...) used. Analysis notes justify: 'Daily case counts over 30 days are an ordered sequence — day order matters for epidemic dynamics.'"
     },
     {
-      "text": "Starts with the Small model configuration from references/model-sizes.md",
-      "passed": true,
-      "evidence": "Lines 94-109: Comments state 'Small config'. TimeSeriesTransformer uses embed_dims=(32,32), num_heads=(2,2), mlp_depths=(1,1), mlp_widths=(64,64). FlowMatching uses subnet widths (128,128). Analysis notes line 25-26 confirm: 'Started with Small config per the skill's hard rule.'"
+      "assertion": "Starts with the Small model configuration from references/model-sizes.md",
+      "result": "pass",
+      "evidence": "Lines 94-109: Comments state 'Small config'. TimeSeriesTransformer uses embed_dims=(32,32), num_heads=(2,2), mlp_depths=(1,1), mlp_widths=(64,64). Analysis notes confirm: 'Started with Small config per the skill's hard rule.'"
     },
     {
-      "text": "Sets summary_dim to approximately 2x the number of parameters (around 8)",
-      "passed": true,
-      "evidence": "Line 94: comment '4 parameters -> summary_dim = 2 * 4 = 8'. Line 98: `summary_dim=8`."
+      "assertion": "Sets summary_dim to approximately 2x the number of parameters (around 8)",
+      "result": "pass",
+      "evidence": "Line 94 comment: '4 parameters -> summary_dim = 2 * 4 = 8'. Line 98: summary_dim=8."
     },
     {
-      "text": "Passes validation_data= to the fit_* call",
-      "passed": true,
-      "evidence": "Line 171: `validation_data=300` in `workflow.fit_online(...)` call."
+      "assertion": "Passes validation_data= to the fit_* call",
+      "result": "pass",
+      "evidence": "Line 171: validation_data=300 in workflow.fit_online(...) call."
     },
     {
-      "text": "Runs in-silico diagnostics before any real-data inference",
-      "passed": true,
-      "evidence": "Lines 196-226: In-silico diagnostics run with 300 simulated datasets via `workflow.simulate(300)`, `workflow.plot_default_diagnostics()`, `workflow.compute_default_diagnostics()`, and `check_diagnostics()`. Real-data inference (section 8, lines 233-267) is commented out and comes after."
+      "assertion": "Runs in-silico diagnostics before any real-data inference",
+      "result": "pass",
+      "evidence": "Lines 196-226: In-silico diagnostics run via workflow.simulate(300), workflow.plot_default_diagnostics(), workflow.compute_default_diagnostics(), and check_diagnostics(). Real-data inference comes after."
     },
     {
-      "text": "Checks all 4 parameters individually against house thresholds",
-      "passed": true,
-      "evidence": "Lines 208-215: `check_diagnostics(metrics)` is called on the metrics DataFrame which contains per-parameter diagnostics. Lines 218-222 enforce STOP/WARN decisions. Analysis notes line 60 confirms: 'Hard stop if any parameter exceeds ECE > 0.10 or NRMSE > 0.15'."
+      "assertion": "Checks all 4 parameters individually against house thresholds",
+      "result": "pass",
+      "evidence": "Lines 208-215: check_diagnostics(metrics) called on per-parameter diagnostics DataFrame. Lines 218-222 enforce STOP/WARN decisions. Analysis notes confirm: 'Hard stop if any parameter exceeds ECE > 0.10 or NRMSE > 0.15'."
     },
     {
-      "text": "Does NOT flatten the time series into inference_conditions",
-      "passed": true,
-      "evidence": "Lines 118-132: The adapter routes daily_cases via `.as_time_series([\"daily_cases\"])` (line 121) then `.concatenate([\"daily_cases\"], into=\"summary_variables\")` (line 132). There is no mention of inference_conditions anywhere in the code."
+      "assertion": "Does NOT flatten the time series into inference_conditions",
+      "result": "pass",
+      "evidence": "Lines 118-132: adapter routes daily_cases via .as_time_series([\"daily_cases\"]) then .concatenate([\"daily_cases\"], into=\"summary_variables\"). No inference_conditions key used."
     }
-  ],
-  "summary": {
-    "passed": 12,
-    "failed": 0,
-    "total": 12,
-    "pass_rate": 1.0
-  }
+  ]
 }

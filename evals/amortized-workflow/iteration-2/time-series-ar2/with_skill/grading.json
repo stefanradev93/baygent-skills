@@ -1,65 +1,65 @@
 {
-  "expectations": [
+  "scenario": "time-series-ar2",
+  "condition": "with_skill",
+  "total_assertions": 11,
+  "passed": 11,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "assertions": [
     {
-      "text": "Defines a simulator that generates AR(2) time series of length 100",
-      "passed": true,
+      "assertion": "Defines a simulator that generates AR(2) time series of length 100",
+      "result": "pass",
       "evidence": "Lines 34, 51-62: T=100, observation_model generates AR(2) via y[t] = phi1*y[t-1] + phi2*y[t-2] + noise. Line 65: simulator = bf.make_simulator([prior, observation_model])."
     },
     {
-      "text": "Routes the time series through summary_variables (not inference_conditions)",
-      "passed": true,
+      "assertion": "Routes the time series through summary_variables (not inference_conditions)",
+      "result": "pass",
       "evidence": "Line 113: .concatenate([\"y\"], into=\"summary_variables\"). No routing of y into inference_conditions anywhere."
     },
     {
-      "text": "Does NOT use SetTransformer for the time series data",
-      "passed": true,
+      "assertion": "Does NOT use SetTransformer for the time series data",
+      "result": "pass",
       "evidence": "Line 84: Uses bf.networks.TimeSeriesTransformer. No occurrence of SetTransformer in the file."
     },
     {
-      "text": "Uses TimeSeriesTransformer, TimeSeriesNetwork, or FusionTransformer as the summary network",
-      "passed": true,
+      "assertion": "Uses TimeSeriesTransformer, TimeSeriesNetwork, or FusionTransformer as the summary network",
+      "result": "pass",
       "evidence": "Line 84: summary_net = bf.networks.TimeSeriesTransformer(...)."
     },
     {
-      "text": "Calls .constrain('sigma', lower=0) for the noise standard deviation",
-      "passed": true,
+      "assertion": "Calls .constrain('sigma', lower=0) for the noise standard deviation",
+      "result": "pass",
       "evidence": "Line 109: .constrain(\"sigma\", lower=0)."
     },
     {
-      "text": "Does NOT flatten the time series into a single vector for inference_conditions",
-      "passed": true,
+      "assertion": "Does NOT flatten the time series into a single vector for inference_conditions",
+      "result": "pass",
       "evidence": "Line 108: .as_time_series([\"y\"]) reshapes to (T,1). Line 113: concatenated into summary_variables. No flattening into inference_conditions."
     },
     {
-      "text": "Starts with the Small model configuration from references/model-sizes.md",
-      "passed": true,
-      "evidence": "Lines 84-92: embed_dims=(32,32), num_heads=(2,2), mlp_depths=(1,1), mlp_widths=(64,64), time_embed_dim=4. Line 96: subnet widths=(128,128). Comments on lines 82-83 reference 'Small config from model-sizes.md'."
+      "assertion": "Starts with the Small model configuration from references/model-sizes.md",
+      "result": "pass",
+      "evidence": "Lines 84-92: embed_dims=(32,32), num_heads=(2,2), mlp_depths=(1,1), mlp_widths=(64,64), time_embed_dim=4. Line 96: subnet widths=(128,128). Comments reference 'Small config from model-sizes.md'."
     },
     {
-      "text": "Passes validation_data= to the fit_* call",
-      "passed": true,
+      "assertion": "Passes validation_data= to the fit_* call",
+      "result": "pass",
       "evidence": "Line 136: validation_data=300 in workflow.fit_online() call."
     },
     {
-      "text": "Saves and inspects training history (JSON + inspect_training or equivalent)",
-      "passed": true,
+      "assertion": "Saves and inspects training history (JSON + inspect_training or equivalent)",
+      "result": "pass",
       "evidence": "Lines 141-143: json.dump(history.history, f) saves to history.json. Lines 145-147: inspect_history(history.history) called and report printed."
     },
     {
-      "text": "Runs in-silico diagnostics and checks against house thresholds",
-      "passed": true,
+      "assertion": "Runs in-silico diagnostics and checks against house thresholds",
+      "result": "pass",
       "evidence": "Lines 157-171: workflow.simulate(300) generates test data, workflow.compute_default_diagnostics() computes metrics, check_diagnostics(metrics) checks thresholds, RuntimeError raised on STOP decision."
     },
     {
-      "text": "Accesses posterior samples by original names (phi1, phi2, sigma), NOT 'inference_variables'",
-      "passed": true,
-      "evidence": "Lines 197-200: samples[\"phi1\"], samples[\"phi2\"], samples[\"sigma\"]. Lines 209-211: same pattern. No samples[\"inference_variables\"] anywhere in the file."
+      "assertion": "Accesses posterior samples by original names (phi1, phi2, sigma), NOT 'inference_variables'",
+      "result": "pass",
+      "evidence": "Lines 197-200: samples[\"phi1\"], samples[\"phi2\"], samples[\"sigma\"]. No samples[\"inference_variables\"] anywhere."
     }
-  ],
-  "summary": {
-    "passed": 11,
-    "failed": 0,
-    "total": 11,
-    "pass_rate": 1.0
-  }
+  ]
 }

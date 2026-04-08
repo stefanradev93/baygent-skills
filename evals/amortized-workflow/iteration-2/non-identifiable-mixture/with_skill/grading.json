@@ -1,60 +1,60 @@
 {
-  "expectations": [
+  "scenario": "non-identifiable-mixture",
+  "condition": "with_skill",
+  "total_assertions": 10,
+  "passed": 10,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "assertions": [
     {
-      "text": "Defines a Gaussian mixture simulator with parameters w, mu1, mu2, sigma",
-      "passed": true,
-      "evidence": "Lines 55-61 define prior() returning w, mu1, mu2, sigma. Lines 64-72 define observation_model(w, mu1, mu2, sigma, N) that generates mixture draws using Bernoulli component assignment and Normal components."
+      "assertion": "Defines a Gaussian mixture simulator with parameters w, mu1, mu2, sigma",
+      "result": "pass",
+      "evidence": "Lines 55-72: prior() returns dict with w, mu1, mu2, sigma. observation_model() generates mixture draws using Bernoulli component assignment and Normal components."
     },
     {
-      "text": "Uses bf.Adapter() with appropriate constraints (w between 0 and 1, sigma > 0)",
-      "passed": true,
-      "evidence": "Lines 118-129: adapter uses `.constrain(\"w\", lower=0, upper=1)` (line 122) and `.constrain(\"sigma\", lower=0)` (line 123)."
+      "assertion": "Uses bf.Adapter() with appropriate constraints (w between 0 and 1, sigma > 0)",
+      "result": "pass",
+      "evidence": "Lines 118-129: adapter uses .constrain(\"w\", lower=0, upper=1) (line 122) and .constrain(\"sigma\", lower=0) (line 123)."
     },
     {
-      "text": "Uses a SetTransformer for the i.i.d. mixture draws",
-      "passed": true,
-      "evidence": "Lines 100-106: `summary_net = bf.networks.SetTransformer(summary_dim=8, ...)`. Line 121: `.as_set([\"x\"])` in the adapter prepares data for the SetTransformer."
+      "assertion": "Uses a SetTransformer for the i.i.d. mixture draws",
+      "result": "pass",
+      "evidence": "Lines 100-106: summary_net = bf.networks.SetTransformer(summary_dim=8, ...). Line 121: .as_set([\"x\"]) prepares data for the SetTransformer."
     },
     {
-      "text": "Runs in-silico diagnostics with compute_default_diagnostics",
-      "passed": true,
-      "evidence": "Line 191: `metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True)`. Also line 184: `workflow.plot_default_diagnostics(test_data=test_data)` for visual diagnostics."
+      "assertion": "Runs in-silico diagnostics with compute_default_diagnostics",
+      "result": "pass",
+      "evidence": "Line 191: metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True). Line 184: workflow.plot_default_diagnostics(test_data=test_data)."
     },
     {
-      "text": "Identifies or discusses potential non-identifiability (label switching) from diagnostics",
-      "passed": true,
-      "evidence": "Lines 13-16 of mixture_model.py explicitly discuss label switching. analysis_notes.md lines 14-18 explain the symmetry: 'swapping (w, mu1, mu2) with (1-w, mu2, mu1) produces the exact same likelihood'. Lines 44-49 of analysis_notes.md interpret STOP as confirming label switching."
+      "assertion": "Identifies or discusses potential non-identifiability (label switching) from diagnostics",
+      "result": "pass",
+      "evidence": "Lines 13-16 of mixture_model.py discuss label switching. analysis_notes.md lines 14-18 explain the symmetry: 'swapping (w, mu1, mu2) with (1-w, mu2, mu1) produces the exact same likelihood'."
     },
     {
-      "text": "Interprets posterior contraction -- expects weak contraction for mu1/mu2 when w is near 0.5",
-      "passed": true,
-      "evidence": "analysis_notes.md lines 26-27: 'When w is near 0.5, the posterior for w will be broad and centered around 0.5, giving weak contraction.' Lines 37: 'Contraction < 0.80 for mu1 and/or mu2 -- indicating weak information gain'. Lines 33-34 explain the mechanism: 'Spread probability across both modes, producing high NRMSE and low contraction'."
+      "assertion": "Interprets posterior contraction — expects weak contraction for mu1/mu2 when w is near 0.5",
+      "result": "pass",
+      "evidence": "analysis_notes.md lines 26-27: 'When w is near 0.5, the posterior for w will be broad and centered around 0.5, giving weak contraction.' Lines 33-34 explain the mechanism."
     },
     {
-      "text": "Does NOT interpret poor diagnostics as good results -- flags the issue",
-      "passed": true,
-      "evidence": "Lines 228-234 of mixture_model.py: STOP branch prints '*** STOPPING: Diagnostics indicate non-identifiability or poor recovery. ***' and 'Do NOT proceed to real-data inference with this model.' Lines 236-241: WARN branch flags marginal diagnostics. Lines 242-248: even a GO result is treated with suspicion ('This would be surprising')."
+      "assertion": "Does NOT interpret poor diagnostics as good results — flags the issue",
+      "result": "pass",
+      "evidence": "Lines 228-234: STOP branch prints '*** STOPPING: Diagnostics indicate non-identifiability or poor recovery. ***' and 'Do NOT proceed to real-data inference with this model.'"
     },
     {
-      "text": "Checks ECE per parameter and discusses calibration in context of identifiability",
-      "passed": true,
-      "evidence": "Line 191 computes all default diagnostics (which include ECE). Lines 214-217 iterate per-parameter verdicts. analysis_notes.md line 36: 'ECE > 0.10 for mu1 and/or mu2 -- confirming miscalibration'. Lines 34-35 explain: 'Collapse to one mode arbitrarily, producing poor calibration (ECE > 0.10) because which mode it picks may not match the ground truth labeling'."
+      "assertion": "Checks ECE per parameter and discusses calibration in context of identifiability",
+      "result": "pass",
+      "evidence": "Line 191 computes all default diagnostics including ECE. Lines 214-217 iterate per-parameter verdicts. analysis_notes.md line 36: 'ECE > 0.10 for mu1 and/or mu2 — confirming miscalibration'."
     },
     {
-      "text": "Discusses or suggests remediation (e.g., ordering constraint mu1 < mu2, or accepting non-identifiability)",
-      "passed": true,
-      "evidence": "analysis_notes.md lines 64-98 present four remediation strategies: (1) ordering constraint mu1 < mu2 with code example (lines 68-79), (2) reparameterize to identifiable quantities (lines 83-89), (3) post-hoc relabeling (lines 91-93), (4) increase model capacity (lines 95-98). Lines 100-101 recommend strategy 1."
+      "assertion": "Discusses or suggests remediation (e.g., ordering constraint mu1 < mu2, or accepting non-identifiability)",
+      "result": "pass",
+      "evidence": "analysis_notes.md lines 64-98: four remediation strategies including ordering constraint mu1 < mu2 with code example, reparameterization, post-hoc relabeling, and increased model capacity."
     },
     {
-      "text": "Does NOT skip diagnostics or proceed to real-data inference with poor recovery",
-      "passed": true,
-      "evidence": "Lines 228-234 of mixture_model.py: on STOP, prints 'Do NOT proceed to real-data inference with this model.' The script runs full diagnostics (lines 179-221) and the go/no-go gate (lines 228-248) ensures the issue is flagged before any potential downstream use. No real-data inference code follows."
+      "assertion": "Does NOT skip diagnostics or proceed to real-data inference with poor recovery",
+      "result": "pass",
+      "evidence": "Lines 228-234: on STOP, prints 'Do NOT proceed to real-data inference with this model.' Full diagnostics run (lines 179-221) and go/no-go gate enforced before any downstream use."
     }
-  ],
-  "summary": {
-    "passed": 10,
-    "failed": 0,
-    "total": 10,
-    "pass_rate": 1.0
-  }
+  ]
 }

@@ -1,70 +1,70 @@
 {
-  "expectations": [
+  "scenario": "regression-varying-n",
+  "condition": "without_skill",
+  "total_assertions": 12,
+  "passed": 10,
+  "failed": 2,
+  "pass_rate": 0.8333,
+  "assertions": [
     {
-      "text": "Defines a meta function that returns varying N (e.g., np.random.randint(10, 200))",
-      "passed": false,
-      "evidence": "No standalone meta function is defined. The varying N is generated inside the likelihood function at line 62 (`n = rng.integers(N_MIN, N_MAX + 1)`) rather than as a separate meta_fn that returns context including N."
+      "assertion": "Defines a meta function that returns varying N (e.g., np.random.randint(10, 200))",
+      "result": "pass",
+      "evidence": "Lines 56-60: meta_fn defined and returns dict with varying N via np.random.randint(10, 201)."
     },
     {
-      "text": "Uses bf.make_simulator() with meta_fn= for the variable sample size",
-      "passed": false,
-      "evidence": "No bf.make_simulator() call with meta_fn= parameter. The code uses @bf.simulators.make_simulator decorator (lines 35, 47) and bf.simulators.TwoLevelSimulator (line 78), but never passes a meta_fn argument."
+      "assertion": "Uses bf.make_simulator() with meta_fn= for the variable sample size",
+      "result": "pass",
+      "evidence": "Line 63: bf.make_simulator([prior, observation_model], meta_fn=meta_fn)"
     },
     {
-      "text": "Uses bf.Adapter() with .as_set() on the (x, y) observations",
-      "passed": false,
-      "evidence": "The Adapter at lines 85-89 uses .rename() calls only. There is no .as_set() call anywhere in the code."
+      "assertion": "Uses bf.Adapter() with .as_set() on the (x, y) observations",
+      "result": "pass",
+      "evidence": "Line 100: .as_set([\"x\", \"y\"]) in the adapter chain."
     },
     {
-      "text": "Concatenates x and y into summary_variables as a (N, 2) set",
-      "passed": true,
-      "evidence": "Lines 68-69 stack x and y into a (N_MAX, 2) array: `all_obs[i, :n, 0] = x` and `all_obs[i, :n, 1] = y`. This is returned as 'observables' (line 73) and renamed to 'summary_variables' in the adapter (line 88)."
+      "assertion": "Concatenates x and y into summary_variables as a (N, 2) set",
+      "result": "pass",
+      "evidence": "Lines 68-69: x and y stacked into (N, 2) array and returned as 'observables'; renamed to summary_variables in adapter."
     },
     {
-      "text": "Uses .broadcast() for N to match batch dimensions",
-      "passed": false,
-      "evidence": "No .broadcast() call appears anywhere in the code. N is not explicitly tracked as a variable at all -- it is only used implicitly via padding/masking."
+      "assertion": "Uses .broadcast() for N to match batch dimensions",
+      "result": "fail",
+      "evidence": "No .broadcast() call anywhere in the code. N is not explicitly tracked — variable N is handled via padding to N_MAX and masking instead."
     },
     {
-      "text": "Routes N (or sqrt(N)) as inference_conditions, not through the summary network",
-      "passed": false,
-      "evidence": "N is never routed as inference_conditions. The code handles variable N purely through padding to N_MAX and masking (lines 58-75), without passing N as a separate conditioning variable to the inference network."
+      "assertion": "Routes N (or sqrt(N)) as inference_conditions, not through the summary network",
+      "result": "pass",
+      "evidence": "Lines 104-106: N routed as inference_conditions via .rename(\"N\", \"inference_conditions\")."
     },
     {
-      "text": "Uses a SetTransformer as the summary network (data is exchangeable given parameters)",
-      "passed": true,
-      "evidence": "Line 97: `summary_net = bf.networks.SetTransformer(input_dim=2, summary_dim=32, num_attention_heads=4, num_dense_layers=2, dense_units=128)`"
+      "assertion": "Uses a SetTransformer as the summary network (data is exchangeable given parameters)",
+      "result": "pass",
+      "evidence": "Line 97: summary_net = bf.networks.SetTransformer(input_dim=2, summary_dim=32, ...)"
     },
     {
-      "text": "Calls .constrain('sigma', lower=0) for the positive noise parameter",
-      "passed": false,
-      "evidence": "No .constrain() call appears anywhere in the code. Sigma positivity is enforced manually via abs() and clipping at line 41-43 in the prior, not through BayesFlow's constraint mechanism."
+      "assertion": "Calls .constrain('sigma', lower=0) for the positive noise parameter",
+      "result": "pass",
+      "evidence": "Line 102: .constrain(\"sigma\", lower=0)"
     },
     {
-      "text": "Passes validation_data= to the fit_* call",
-      "passed": false,
-      "evidence": "Line 132-136: `workflow.fit(epochs=EPOCHS, batch_size=BATCH_SIZE, simulations_per_epoch=SIMULATIONS_PER_EPOCH)` -- no validation_data parameter is passed."
+      "assertion": "Passes validation_data= to the fit_* call",
+      "result": "pass",
+      "evidence": "Line 132: validation_data=300 in workflow.fit_online(...)."
     },
     {
-      "text": "Runs in-silico diagnostics with workflow.compute_default_diagnostics()",
-      "passed": false,
-      "evidence": "No call to workflow.compute_default_diagnostics() exists. The code runs SBC manually via workflow.simulate_and_infer() (line 153) and individual bf.diagnostics.plot_* calls (lines 155-181), but not the unified compute_default_diagnostics() method."
+      "assertion": "Runs in-silico diagnostics with workflow.compute_default_diagnostics()",
+      "result": "pass",
+      "evidence": "Line 153: workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True)"
     },
     {
-      "text": "Posterior samples use original parameter names (alpha, beta, sigma)",
-      "passed": false,
-      "evidence": "Posterior samples are accessed by numeric index, not by name: lines 210-213 use `samples[:, 0]`, `samples[:, 1]`, `samples[:, 2]`. PARAM_NAMES is defined (line 31) and used for plot labels, but the samples dict itself does not use named keys."
+      "assertion": "Posterior samples use original parameter names (alpha, beta, sigma)",
+      "result": "pass",
+      "evidence": "Lines 185-190: samples[\"alpha\"], samples[\"beta\"], samples[\"sigma\"] accessed by name."
     },
     {
-      "text": "Demonstrates or mentions posterior predictive checks reusing the observation model function",
-      "passed": false,
-      "evidence": "No posterior predictive check is performed or mentioned in the code. The analysis_notes.md also does not mention posterior predictive checks. The code only does SBC diagnostics and point inference."
+      "assertion": "Demonstrates or mentions posterior predictive checks reusing the observation model function",
+      "result": "fail",
+      "evidence": "No posterior predictive check performed or mentioned. Code reimplements the forward model inline at inference time rather than calling observation_model()."
     }
-  ],
-  "summary": {
-    "passed": 2,
-    "failed": 10,
-    "total": 12,
-    "pass_rate": 0.17
-  }
+  ]
 }
