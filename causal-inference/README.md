@@ -1,6 +1,6 @@
 # causal-inference
 
-An opinionated [Agent Skill](https://agentskills.io) for production-grade Bayesian causal inference using PyMC, CausalPy, and DoWhy.
+An opinionated [Agent Skill](https://agentskills.io) for production-grade Bayesian causal inference using [PyMC](https://www.pymc.io/welcome.html), [CausalPy](https://causalpy.readthedocs.io/en/stable/), and [DoWhy](https://www.pywhy.org/dowhy/v0.14/).
 
 Compatible with Claude Code, Kimi Code, Cursor, Gemini CLI, and any agent that supports the [Agent Skills spec](https://agentskills.io/specification).
 

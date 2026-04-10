@@ -1,6 +1,6 @@
 # amortized-workflow
 
-An opinionated [Agent Skill](https://agentskills.io) for amortized Bayesian inference using BayesFlow for simulation-based inference (SBI).
+An opinionated [Agent Skill](https://agentskills.io) for [amortized Bayesian inference](https://learnbayesstats.com/episode/amortized-bayesian-inference-deep-neural-networks-bayesflow-marvin-schmitt) using [BayesFlow](https://bayesflow.org/v2.0.8/index.html) for simulation-based inference (SBI).
 
 Compatible with Claude Code, Kimi Code, Cursor, Gemini CLI, and any agent that supports the [Agent Skills spec](https://agentskills.io/specification).
 
@@ -18,7 +18,7 @@ Guides your coding agent through the full amortized Bayesian workflow with Bayes
 8. **Posterior predictive checks** — Reusing the simulator's forward model
 9. **Report** — Architecture, simulation budget, diagnostics, and limitations
 
-The skill enforces guardrails that agents won't apply on their own: start with Small model sizes, gate on diagnostic thresholds before real-data inference, use `SetTransformer` for exchangeable data (not `inference_conditions`), use `DiffusionModel` with `UNet` for image-valued targets, and never hand-roll coverage or calibration metrics.
+The skill enforces guardrails that agents won't apply on their own: start with small model sizes, gate on diagnostic thresholds before real-data inference, use `SetTransformer` for exchangeable data (not `inference_conditions`), use `DiffusionModel` with `UNet` for image-valued targets, and never hand-roll coverage or calibration metrics.
 
 ## Install
 
@@ -84,6 +84,10 @@ amortized-workflow/
     ├── check_diagnostics.py          # Diagnostics threshold checker
     └── inspect_training.py           # Training convergence inspector
 ```
+
+## Authors
+
+[Stefan Radev](https://github.com/stefanradev93) and [Alexandre Andorra](https://github.com/alexandorra)
 
 ## License
 
