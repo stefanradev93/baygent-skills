@@ -1,0 +1,65 @@
+{
+  "scenario": "time-series-ar2",
+  "condition": "without_skill",
+  "total_assertions": 11,
+  "passed": 9,
+  "failed": 2,
+  "pass_rate": 0.8182,
+  "assertions": [
+    {
+      "assertion": "Defines a simulator that generates AR(2) time series of length 100",
+      "result": "pass",
+      "evidence": "Lines 29-64: T=100 is set, observation_model generates AR(2) series with y[t] = phi1*y[t-1] + phi2*y[t-2] + noise. Line 67: bf.make_simulator([prior, observation_model])."
+    },
+    {
+      "assertion": "Routes the time series through summary_variables (not inference_conditions)",
+      "result": "pass",
+      "evidence": "Line 127: .concatenate([\"y\"], into=\"summary_variables\") — y is routed into summary_variables, not inference_conditions."
+    },
+    {
+      "assertion": "Does NOT use SetTransformer for the time series data",
+      "result": "pass",
+      "evidence": "Line 94: Uses bf.networks.TimeSeriesTransformer, not SetTransformer. No SetTransformer appears anywhere."
+    },
+    {
+      "assertion": "Uses TimeSeriesTransformer, TimeSeriesNetwork, or FusionTransformer as the summary network",
+      "result": "pass",
+      "evidence": "Line 94: summary_network = bf.networks.TimeSeriesTransformer(...)."
+    },
+    {
+      "assertion": "Calls .constrain('sigma', lower=0) for the noise standard deviation",
+      "result": "pass",
+      "evidence": "Line 124: .constrain(\"sigma\", lower=0)."
+    },
+    {
+      "assertion": "Does NOT flatten the time series into a single vector for inference_conditions",
+      "result": "pass",
+      "evidence": "Line 123: .as_time_series([\"y\"]) reshapes to (T,1). Line 127: y goes into summary_variables. No flattening."
+    },
+    {
+      "assertion": "Starts with the Small model configuration from references/model-sizes.md",
+      "result": "fail",
+      "evidence": "Uses ad hoc SetTransformer sizes (embed_dims=(64,64), num_heads=(4,4), mlp_widths=(128,128)) with no reference to model-sizes.md. Analysis notes describe it as 'default-sized architecture'."
+    },
+    {
+      "assertion": "Passes validation_data= to the fit_* call",
+      "result": "pass",
+      "evidence": "Line 157: validation_data=300 in workflow.fit_online(...)."
+    },
+    {
+      "assertion": "Saves and inspects training history (JSON + inspect_training or equivalent)",
+      "result": "fail",
+      "evidence": "Training history inspected via printed summary and matplotlib plot but NOT saved as JSON. No call to inspect_training or equivalent. History only saved as a PNG plot."
+    },
+    {
+      "assertion": "Runs in-silico diagnostics and checks against house thresholds",
+      "result": "fail",
+      "evidence": "Lines 192-209: compute_default_diagnostics called but no threshold checks applied. Metrics printed and saved to CSV but never compared against pass/fail criteria. Uses fabricated bf.diagnostics.run_sbc() with non-standard thresholds."
+    },
+    {
+      "assertion": "Accesses posterior samples by original names (phi1, phi2, sigma), NOT 'inference_variables'",
+      "result": "pass",
+      "evidence": "Lines 224-227: samples[\"phi1\"], samples[\"phi2\"], samples[\"sigma\"] accessed by original parameter names."
+    }
+  ]
+}

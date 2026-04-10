@@ -1,0 +1,65 @@
+{
+  "reviews": [
+    {
+      "run_id": "logistic-regression-churn-with_skill",
+      "feedback": "- Don't need this comment in the code: \"# Reproducible seeds: derived from a descriptive analysis name, never magic numbers.\"; just do it, don't say it\n- For utility functions like `predict_churn_probability`, and for computations on `InferenceData` objects and `DataTree`, always prefer xarray to numpy. Use numpy as a last resort. Add this as a general rule for the skill",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "logistic-regression-churn-without_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "hierarchical-schools-with_skill",
+      "feedback": "Why aren't there any analysis notes for this iteration? That makes interpretation of model and diagnostics much harder for users (e.g there is no interpretation of LOO-PIT results)",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "hierarchical-schools-without_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "troubleshooting-divergences-with_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "troubleshooting-divergences-without_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "count-data-overdispersion-with_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "count-data-overdispersion-without_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "model-comparison-houses-with_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "model-comparison-houses-without_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "prior-elicitation-report-with_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    },
+    {
+      "run_id": "prior-elicitation-report-without_skill",
+      "feedback": "",
+      "timestamp": "2026-03-02T15:12:51.068Z"
+    }
+  ],
+  "status": "complete"
+}

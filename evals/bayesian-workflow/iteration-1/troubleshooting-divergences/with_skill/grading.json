@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Explicitly states that results are unreliable and should NOT be interpreted",
+      "passed": true,
+      "evidence": "The output explicitly states on line 11: 'Verdict: Do NOT interpret these results.' and reiterates on line 277: 'Do not interpret the current results. With 47 divergences and R-hat of 1.03, the posterior summaries, credible intervals, and predictions are unreliable.'"
+    },
+    {
+      "text": "Identifies all three symptoms: divergences, high R-hat, stuck chain",
+      "passed": true,
+      "evidence": "The summary table (lines 5-9) explicitly lists all three: 47 divergences (FAIL), R-hat 1.03 (FAIL), and 'One chain stuck in a different region' (FAIL). Line 11 further confirms: 'The stuck chain and the high R-hat confirm that at least one chain has not converged... The 47 divergences... indicate the posterior has regions of high curvature.'"
+    },
+    {
+      "text": "Suggests non-centered reparameterization as a fix",
+      "passed": true,
+      "evidence": "Fix 1 (lines 73-127) is entirely dedicated to non-centered reparameterization, with a detailed before/after code example showing the transformation from centered to non-centered form, plus an explanation of why it works (breaking the funnel dependency)."
+    },
+    {
+      "text": "Suggests increasing target_accept (to 0.95 or higher)",
+      "passed": true,
+      "evidence": "Fix 2 (lines 130-146) explicitly recommends increasing target_accept to 0.95, with code showing 'target_accept=0.95' and a progression: 0.95 first, then 0.99 for stubborn cases."
+    },
+    {
+      "text": "Suggests checking for multimodality",
+      "passed": true,
+      "evidence": "Line 23 identifies 'Multimodality or a ridge in the posterior' as one of two possible root causes. The decision tree (line 267) includes 'Multimodal -> Consider mixture model or different parameterization'. The pair plot diagnostic (lines 46-53) is recommended specifically to visualize the posterior geometry which would reveal multimodality."
+    },
+    {
+      "text": "Provides concrete Python/PyMC code examples for at least two fixes",
+      "passed": true,
+      "evidence": "The output includes extensive Python/PyMC code for multiple fixes: (1) Non-centered reparameterization with full before/after model code (lines 79-122), (2) target_accept increase with pm.sample code (lines 134-139), (3) Stronger priors on scale parameters (lines 154-168), (4) Increased tuning steps (lines 177-185), (5) Marginalizing discrete parameters (lines 194-199), and (6) Full diagnostic/verification code (lines 208-239)."
+    },
+    {
+      "text": "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)",
+      "passed": true,
+      "evidence": "Line 8 uses '<= 1.01' as the threshold in the summary table. Line 36 filters 'summary[summary[\"r_hat\"] > 1.01]'. Line 217 checks '(summary[\"r_hat\"] <= 1.01).all()'. Line 243 states 'R-hat <= 1.01 on all parameters' as a required condition. The 1.01 threshold is used consistently throughout."
+    },
+    {
+      "text": "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)",
+      "passed": true,
+      "evidence": "The output suggests all three types: (1) Trace/rank plots on line 40: 'az.plot_trace(idata, ..., kind=\"rank_vlines\")'; (2) Pair plots with divergences highlighted on lines 46-53: 'az.plot_pair(idata, ..., divergences=True, ...)'; (3) Energy plots on lines 56-57: 'az.plot_energy(idata)'. These are also repeated in the post-fix verification checklist (lines 231-238)."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  }
+}

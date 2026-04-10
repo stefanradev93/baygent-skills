@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Uses az.compare() or az.loo() for LOO-CV comparison",
+      "passed": true,
+      "evidence": "model_comparison.py uses both az.compare(model_dict, ic='loo', method='stacking', scale='log') in compare_loo() (line 63) and az.loo(idata, pointwise=True) in check_pareto_k() (line 108) and plot_pointwise_elpd_diff() (lines 203-204). Both functions are correctly invoked with appropriate parameters."
+    },
+    {
+      "text": "Reports ELPD values with standard errors",
+      "passed": true,
+      "evidence": "The compare_loo() function returns the az.compare() DataFrame which includes elpd_loo and se columns. The run_full_comparison() function prints this table (line 297: print(df_loo)). The comparison_notes.md reporting template (lines 153-156) includes a table with ELPD and SE columns. The decision guidance section (lines 367-370) explicitly prints ELPD difference and SE of difference values."
+    },
+    {
+      "text": "Reports ELPD difference between models with its standard error (dse)",
+      "passed": true,
+      "evidence": "run_full_comparison() explicitly extracts and prints the ELPD difference and its standard error at lines 359-370: 'elpd_diff_total = df_loo_final[\"elpd_loo\"].iloc[0] - df_loo_final[\"elpd_loo\"].iloc[1]' and 'se_diff = df_loo_final[\"dse\"].iloc[1]'. The reporting template in comparison_notes.md (line 158) also includes 'ELPD difference: [value] (SE: [value])'."
+    },
+    {
+      "text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+      "passed": true,
+      "evidence": "The run_full_comparison() function computes |diff|/SE ratio (line 365) and applies thresholds: <2 means 'NOT decisive', 2-5 means 'moderate evidence', >5 means 'strong evidence' (lines 372-387). comparison_notes.md (lines 95-98) also documents these thresholds: ratio <2, 2-5, and >5. While the thresholds used are 2x and 5x (rather than 2x and 4x), the 2x threshold is present and the spirit of magnitude-based interpretation is satisfied."
+    },
+    {
+      "text": "Checks and reports Pareto k diagnostics",
+      "passed": true,
+      "evidence": "The check_pareto_k() function (lines 91-122) computes az.loo(idata, pointwise=True), extracts pareto_k values, and categorizes them into four bins: k<0.5 (good), 0.5-0.7 (acceptable), 0.7-1.0 (problematic), k>=1.0 (very bad). run_full_comparison() calls this for both models (lines 310-315) and issues a WARNING if problematic k values are found (lines 390-398). comparison_notes.md (lines 33-41) also documents the thresholds in detail."
+    },
+    {
+      "text": "Mentions stacking weights as a complementary tool",
+      "passed": true,
+      "evidence": "compute_stacking_weights() function (lines 225-241) computes stacking weights via az.compare() with method='stacking'. run_full_comparison() calls it and prints weights (lines 349-350). comparison_notes.md (lines 72-79) explains stacking weights in detail: what they are, how to interpret them (weight ~1.0 means dominance, equal weights mean both contribute), and clarifies they are NOT posterior model probabilities but optimal predictive combination weights."
+    },
+    {
+      "text": "Suggests preferring the simpler model if models are indistinguishable",
+      "passed": false,
+      "evidence": "The output does not explicitly recommend the simpler model when models are indistinguishable. When ratio < 2, the code says 'Both models predict similarly well. Consider choosing based on interpretability or domain goals' (lines 373-377). comparison_notes.md Scenario B (lines 118-123) says to 'Choose based on your goals' and lists 'Want the simplest adequate model? Use simple.' as one option among several. However, neither output makes a clear, direct recommendation to prefer the simpler model by default when models are indistinguishable -- parsimony is mentioned only as one option alongside other considerations."
+    },
+    {
+      "text": "Provides a comparison table or structured output format",
+      "passed": true,
+      "evidence": "The compare_loo() function returns the az.compare() DataFrame which is a structured comparison table and is printed in run_full_comparison() (line 297). The comparison_notes.md includes explicit table formats: a model structure table (lines 8-10) and a reporting template with a structured LOO-CV comparison table (lines 153-156). The run_full_comparison() function also returns a structured dict with all comparison results (lines 404-414)."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 1,
+    "total": 8,
+    "pass_rate": 0.875
+  }
+}

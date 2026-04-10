@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+      "passed": true,
+      "evidence": "Line 130: pm.NegativeBinomial('tickets', mu=pm.math.exp(log_mu), alpha=alpha, ...). Lines 84-86 compute and print variance/mean ratio confirming overdispersion. A Poisson model is also fit (line 361) but explicitly as a baseline for comparison."
+    },
+    {
+      "text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+      "passed": true,
+      "evidence": "Lines 4-6: 'The variance appears larger than the mean, suggesting overdispersion. We model ticket counts using a Negative Binomial likelihood (which naturally handles overdispersion).' Lines 85-86: prints 'Variance / Mean: ... (>>1 = overdispersed)'. Lines 128-129: 'NegativeBinomial parameterized by mu and alpha: Var(Y) = mu + mu^2 / alpha'."
+    },
+    {
+      "text": "Uses log-link function for count data",
+      "passed": true,
+      "evidence": "Line 125: log_mu = intercept + dow_effect[dow_idx] + release_effect * release. Line 132: mu=pm.math.exp(log_mu) — linear predictor is on the log scale, exponentiated for the likelihood. This is the canonical log-link for count data."
+    },
+    {
+      "text": "Sets appropriate priors for count model parameters",
+      "passed": true,
+      "evidence": "Line 108: intercept ~ Normal(log(10), 1.0) — centered on log of expected baseline count. Line 113: dow_effect ~ ZeroSumNormal(sigma=0.5). Line 118: release_effect ~ Normal(0.5, 0.5). Line 122: alpha ~ Gamma(2, 0.5). All priors have justification comments explaining the parameter choices."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "Line 140: prior_pred = pm.sample_prior_predictive(random_seed=rng) — called before pm.sample() on line 170."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "Line 178: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) — called after pm.sample()."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "Line 192: summary = az.summary(idata, round_to=3). Line 207: az.plot_trace(idata, kind='rank_vlines'). Both used."
+    },
+    {
+      "text": "Reports predictor effects with uncertainty intervals (HDI)",
+      "passed": true,
+      "evidence": "Line 433: summary_94 = az.summary(idata, hdi_prob=0.94, round_to=3) — reports all parameters with 94% HDI. Lines 440-444: Release effect with 94% HDI on both log and rate scales. Lines 448-453: Day-of-week effects each with 94% HDI."
+    },
+    {
+      "text": "Interprets effects on the natural count scale (not just log scale)",
+      "passed": true,
+      "evidence": "Lines 437-444: release_multiplier = np.exp(release_samples) — converts to rate multiplier. Prints 'Release multiplier (rate scale): mean = X.XXx, 94% HDI = [X.XXx, X.XXx]'. Line 461-462: Also interprets Var/Mean ratio on the natural scale."
+    },
+    {
+      "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)",
+      "passed": true,
+      "evidence": "Lines 274-302: Uses azp.plot_ppc_pit(idata) for PPC-PIT calibration. Falls back to az.plot_loo_pit if needed."
+    },
+    {
+      "text": "Generates a companion analysis notes file (markdown) interpreting the results",
+      "passed": false,
+      "evidence": "File not generated (subagent permission issue)"
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 1,
+    "total": 11,
+    "pass_rate": 0.91
+  }
+}

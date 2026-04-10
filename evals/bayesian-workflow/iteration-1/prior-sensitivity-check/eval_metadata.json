@@ -1,0 +1,21 @@
+{
+  "eval_id": 7,
+  "eval_name": "prior-sensitivity-check",
+  "prompt": "I'm modeling the effect of a workplace safety program on injury rates across 30 factories. I have monthly injury counts for 2 years before and after the program was introduced, plus number of employees per factory. I have strong prior beliefs from a previous study that the program reduces injuries by about 25% (rate ratio around 0.75), so I want to encode that as an informative prior. But a colleague challenged me, saying my prior might be driving the results. Can you build the model and check whether my conclusions are sensitive to the prior choice?",
+  "assertions": [
+    "Uses a count likelihood (Poisson or NegativeBinomial) with log-link",
+    "Encodes an informative prior on the treatment effect reflecting the ~25% reduction belief",
+    "Calls pm.sample_prior_predictive() before inference",
+    "Calls pm.sample() with nuts_sampler='nutpie'",
+    "Calls pm.compute_log_likelihood(idata, model=model) after sampling",
+    "Calls pm.compute_log_prior(idata, model=model) after sampling",
+    "Imports psense_summary from arviz_stats and runs it on the InferenceData",
+    "Interprets the psense_summary output — mentions CJS values or sensitivity diagnosis for the treatment effect parameter",
+    "Discusses whether the informative prior flags as sensitive and what that means for the conclusions",
+    "Does NOT reflexively weaken the prior just because sensitivity is flagged — justifies the choice or explains the tradeoff",
+    "Imports plot_psense_dist from arviz_plots (not arviz_stats) for visual sensitivity diagnostics",
+    "Uses coords and dims in the PyMC model definition",
+    "Reports 94% HDI (not 95% CI) for parameter estimates",
+    "Generates a companion analysis notes file interpreting the sensitivity results"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+      "passed": true,
+      "evidence": "Line 162 of churn_model.py: pm.Bernoulli('churned', logit_p=logit_p, observed=y_data, dims='obs_id'). Uses the logit_p parameter which applies the inverse-logit link internally."
+    },
+    {
+      "text": "Standardizes or scales predictors before fitting the model",
+      "passed": true,
+      "evidence": "Lines 99-101 of churn_model.py: StandardScaler from sklearn is imported and applied via scaler.fit_transform(df[predictor_names].values). Standardization parameters are stored for back-transformation."
+    },
+    {
+      "text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+      "passed": true,
+      "evidence": "Lines 144 and 153 of churn_model.py: alpha = pm.Normal('alpha', mu=0, sigma=1.5) and beta = pm.Normal('beta', mu=0, sigma=1.5, dims='predictors'). Sigma=1.5 is within the [1, 5] range."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "Line 180 of churn_model.py: prior_pred = pm.sample_prior_predictive(samples=1000, random_seed=RANDOM_SEED). This is in section 4 (Prior Predictive Check), before section 5 (Inference) which calls pm.sample()."
+    },
+    {
+      "text": "Calls pm.sample() for MCMC inference",
+      "passed": true,
+      "evidence": "Lines 226-233 of churn_model.py: idata = pm.sample(draws=2000, tune=2000, chains=4, nuts_sampler='nutpie', random_seed=RANDOM_SEED, target_accept=0.9)."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "Line 296 of churn_model.py: idata.extend(pm.sample_posterior_predictive(idata, random_seed=RANDOM_SEED)). This is in section 7 (Model Criticism), after inference."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "Line 245: summary = az.summary(idata, var_names=['alpha', 'beta'], round_to=3). Line 277: az.plot_trace(idata, var_names=['alpha', 'beta'], kind='rank_vlines'). Both are used in section 6 (Convergence Diagnostics)."
+    },
+    {
+      "text": "Reports 94% HDI (not 95% CI) for parameter estimates",
+      "passed": true,
+      "evidence": "Lines 414-418: az.summary(idata, var_names=['alpha', 'beta'], hdi_prob=0.94). Also lines 474-480 report 94% HDI for back-transformed coefficients, and lines 486-488 for odds ratios. The 94% HDI is used consistently throughout."
+    },
+    {
+      "text": "Uses coords and dims in the PyMC model definition",
+      "passed": true,
+      "evidence": "Lines 128-131: coords = {'predictors': predictor_names, 'obs_id': np.arange(N)}. Line 133: pm.Model(coords=coords). Dims used on lines 136 ('obs_id', 'predictors'), 137 ('obs_id'), 153 ('predictors'), 162 ('obs_id')."
+    },
+    {
+      "text": "Documents prior choices with justification comments in the code",
+      "passed": true,
+      "evidence": "Lines 140-152: Detailed comments justify Normal(0, 1.5) for intercept ('enough room to place baseline churn rate anywhere from ~5% to ~95%') and coefficients ('allows effect sizes up to ~3 on the logit scale... standard weakly informative prior... Gelman et al. 2008'). Lines 159-161: Bernoulli likelihood justification."
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10,
+    "pass_rate": 1.0
+  }
+}

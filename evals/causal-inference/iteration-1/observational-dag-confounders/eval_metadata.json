@@ -1,0 +1,18 @@
+{
+  "eval_id": 6,
+  "eval_name": "observational-dag-confounders",
+  "prompt": "I want to estimate the causal effect of exercise on blood pressure. I have observational data on 3000 adults: exercise_hours_per_week, systolic_bp, age, bmi, smoking_status, stress_level, diet_quality, and income. There's no randomization — people chose their own exercise levels. Help me build a causal analysis. I'm presenting the results to a medical board that includes both statisticians and clinicians.",
+  "assertions": [
+    "Proposes a DAG with exercise as treatment and blood pressure as outcome, identifying confounders",
+    "Identifies age, BMI, smoking, stress, diet, and income as potential confounders (or subsets thereof)",
+    "Warns about collider bias: e.g., if BMI is a mediator (exercise → BMI → BP), adjusting for it blocks the indirect effect",
+    "Asks the user to confirm the DAG and which variables are confounders vs mediators vs colliders",
+    "Uses DoWhy or explicit backdoor adjustment to identify the causal effect from the confirmed DAG",
+    "States the 'no unmeasured confounders' assumption and asks the user whether it's defensible",
+    "Estimates the effect using a Bayesian model (PyMC, CausalPy IPSW, or Bambi), not just OLS",
+    "Runs at least one refutation check (DoWhy random common cause, sensitivity to unobserved confounding, or data subset)",
+    "Adapts the report for the mixed audience (clinicians get plain language, statisticians get the DAG and formal results)",
+    "Reports limitations: observational study, unmeasured confounders possible, effect may not be causal without stronger design",
+    "Does not overstate causal claims — uses appropriate hedging language for an observational analysis"
+  ]
+}

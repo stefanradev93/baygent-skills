@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+      "passed": true,
+      "evidence": "churn_model.py line 200: pm.Bernoulli('churn', logit_p=logit_p, observed=y_data) -- uses Bernoulli with logit_p parameter (logit inverse-link)."
+    },
+    {
+      "text": "Standardizes or scales predictors before fitting the model",
+      "passed": true,
+      "evidence": "churn_model.py lines 119-121: StandardScaler().fit_transform(X_train) applied before modeling. Also documented in analysis_notes.md Section 3."
+    },
+    {
+      "text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+      "passed": true,
+      "evidence": "churn_model.py line 194: pm.Normal('betas', mu=0, sigma=1, shape=X_train.shape[1]) -- sigma=1 is within [1, 5]. Intercept has sigma=1.5 (line 193)."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "churn_model.py lines 559-561: pm.sample_prior_predictive(samples=1000, ...) called in prior_predictive_check(). In main(), prior_predictive_check is called at line 679 before fit_model at line 688."
+    },
+    {
+      "text": "Calls pm.sample() for MCMC inference",
+      "passed": true,
+      "evidence": "churn_model.py lines 218-226: pm.sample(draws=2000, tune=1000, chains=4, ...) called inside fit_model()."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "churn_model.py lines 355-360: pm.sample_posterior_predictive(idata, ...) called in posterior_predictions(), which runs after fit_model in main() (line 698)."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "churn_model.py line 248: az.summary(idata, var_names=['intercept', 'betas'], hdi_prob=0.94). Also line 297: az.plot_trace(idata, ...). Both used in diagnostics functions."
+    },
+    {
+      "text": "Reports 94% HDI (not 95% CI) for parameter estimates",
+      "passed": true,
+      "evidence": "churn_model.py line 249: az.summary(..., hdi_prob=0.94). Also lines 304, 313, 495, 507 all use hdi_prob=0.94. analysis_notes.md Section 8 explicitly explains the 94% HDI preference."
+    },
+    {
+      "text": "Uses coords and dims in the PyMC model definition",
+      "passed": false,
+      "evidence": "churn_model.py build_model() (lines 187-202) does not use coords or dims. Parameters are defined with shape=X_train.shape[1] instead of named dims. No coords dict is passed to pm.Model()."
+    },
+    {
+      "text": "Documents prior choices with justification comments in the code",
+      "passed": true,
+      "evidence": "churn_model.py lines 166-185: detailed docstring in build_model() explaining intercept Normal(0,1.5) and betas Normal(0,1) choices with logit-scale reasoning and Gelman et al. (2008) reference. Also in analysis_notes.md Section 4."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "total": 10,
+    "pass_rate": 0.9
+  }
+}

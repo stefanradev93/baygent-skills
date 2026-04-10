@@ -1,0 +1,60 @@
+{
+  "scenario": "non-identifiable-mixture",
+  "condition": "without_skill",
+  "total_assertions": 10,
+  "passed": 8,
+  "failed": 2,
+  "pass_rate": 0.8,
+  "assertions": [
+    {
+      "assertion": "Defines a Gaussian mixture simulator with parameters w, mu1, mu2, sigma",
+      "result": "pass",
+      "evidence": "Lines 43-68: prior() returns dict with w, mu1, mu2, sigma. observation_model() generates mixture draws using these parameters."
+    },
+    {
+      "assertion": "Uses bf.Adapter() with appropriate constraints (w between 0 and 1, sigma > 0)",
+      "result": "pass",
+      "evidence": "Lines 113-121: adapter = bf.Adapter().as_set(['x']).constrain('w', lower=0, upper=1).constrain('sigma', lower=0).convert_dtype(...).concatenate(...)."
+    },
+    {
+      "assertion": "Uses a SetTransformer for the i.i.d. mixture draws",
+      "result": "pass",
+      "evidence": "Lines 97-103: summary_net = bf.networks.SetTransformer(summary_dim=8, embed_dims=(32, 32), num_heads=(2, 2), mlp_depths=(1, 1), mlp_widths=(64, 64))."
+    },
+    {
+      "assertion": "Runs in-silico diagnostics with compute_default_diagnostics",
+      "result": "fail",
+      "evidence": "Uses fabricated bf.diagnostics.compute_default_diagnostics() function that does not exist in the BayesFlow API. The actual workflow.compute_default_diagnostics() method is not called."
+    },
+    {
+      "assertion": "Identifies or discusses potential non-identifiability (label switching) from diagnostics",
+      "result": "pass",
+      "evidence": "Lines 196-207: Extensive print statements explaining expected poor recovery for mu1/mu2 due to label switching. analysis_notes.md lines 16-19 detail the problem."
+    },
+    {
+      "assertion": "Interprets posterior contraction — expects weak contraction for mu1/mu2 when w is near 0.5",
+      "result": "pass",
+      "evidence": "Lines 199-200: 'mu1: POOR recovery (high NRMSE, low R2) due to label switching'. analysis_notes.md lines 40-44 discuss expected NRMSE and R2 metrics."
+    },
+    {
+      "assertion": "Does NOT interpret poor diagnostics as good results — flags the issue",
+      "result": "pass",
+      "evidence": "Lines 248-271: go/no-go gate checks R2 < 0.3 for mu1/mu2 and prints 'STOP: mu1 and/or mu2 show poor recovery. Do NOT proceed to real-data inference with unconstrained mu1, mu2.'"
+    },
+    {
+      "assertion": "Checks ECE per parameter and discusses calibration in context of identifiability",
+      "result": "fail",
+      "evidence": "Lines 219-242 only check R2 and NRMSE per parameter. ECE not extracted or discussed anywhere. analysis_notes.md mentions calibration briefly but code does not check or interpret ECE values."
+    },
+    {
+      "assertion": "Discusses or suggests remediation (e.g., ordering constraint mu1 < mu2, or accepting non-identifiability)",
+      "result": "pass",
+      "evidence": "Lines 264-271: lists three remediation options including ordering constraint mu1 < mu2, post-hoc relabeling, and identifiable quantities. analysis_notes.md provides detailed strategies."
+    },
+    {
+      "assertion": "Does NOT skip diagnostics or proceed to real-data inference with poor recovery",
+      "result": "pass",
+      "evidence": "Lines 228-234: STOP decision prevents proceeding. Full diagnostic section runs before any inference code."
+    }
+  ]
+}

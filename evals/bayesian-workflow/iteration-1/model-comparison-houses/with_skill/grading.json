@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Uses az.compare() or az.loo() for LOO-CV comparison",
+      "passed": true,
+      "evidence": "model_comparison.py line 202: 'comparison = az.compare(models)' and lines 286-287: 'loo_simple = az.loo(idata_simple, pointwise=True)' and 'loo_hier = az.loo(idata_hier, pointwise=True)'. Both az.compare() and az.loo() are used correctly."
+    },
+    {
+      "text": "Reports ELPD values with standard errors",
+      "passed": true,
+      "evidence": "model_comparison.py lines 519-534 produce a formatted comparison table with columns 'ELPD (LOO)' and 'SE' for each model. The table iterates over comparison rows extracting 'elpd_loo' and 'se' values. Additionally, comparison_notes.md lines 36-46 explain the comparison table columns including elpd_loo and se."
+    },
+    {
+      "text": "Reports ELPD difference between models with its standard error (dse)",
+      "passed": true,
+      "evidence": "model_comparison.py lines 219-220: 'elpd_diff = comparison.loc[second_model_name, \"elpd_diff\"]' and 'dse = comparison.loc[second_model_name, \"dse\"]'. Lines 230-231 print these: 'ELPD difference: {elpd_diff:.2f}' and 'SE of difference: {dse:.2f}'. The formatted table also includes 'Delta ELPD' and 'Delta SE' columns. comparison_notes.md lines 43-44 explicitly explain these columns."
+    },
+    {
+      "text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+      "passed": true,
+      "evidence": "model_comparison.py lines 223-225 comment: 'elpd_diff < 2 * dse --> models practically indistinguishable', 'elpd_diff > 4 * dse --> strong evidence', 'between 2-4 * dse --> moderate evidence'. Lines 226, 232, 235-254 compute the ratio |elpd_diff|/dse and apply three threshold-based interpretations (<2, 2-4, >4). comparison_notes.md lines 49-56 provide a table with the same thresholds: '< 2', '2 -- 4', '> 4'."
+    },
+    {
+      "text": "Checks and reports Pareto k diagnostics",
+      "passed": true,
+      "evidence": "model_comparison.py lines 280-327 (Step 6) compute pointwise LOO, count observations with Pareto k > 0.5 and > 0.7, report counts, print warnings for problematic observations including their indices, and suggest remedies (K-fold CV, moment matching). Lines 317-327 also generate Pareto k diagnostic plots via az.plot_khat(). comparison_notes.md lines 59-68 provide a full Pareto k interpretation table with thresholds 0.5, 0.7 and recommended actions."
+    },
+    {
+      "text": "Mentions stacking weights as a complementary tool",
+      "passed": true,
+      "evidence": "model_comparison.py lines 258-275 (Step 5) print stacking weights for each model and explain: 'Stacking weights minimize expected log predictive density loss. If no single model dominates, consider using stacking to combine predictions from both models.' comparison_notes.md lines 71-78 explain stacking weights in detail: 'When no single model is clearly dominant, stacking weights provide the optimal way to combine predictions from multiple models.' Line 78: 'Report stacking weights alongside ELPD differences in all comparison reports.'"
+    },
+    {
+      "text": "Suggests preferring the simpler model if models are indistinguishable",
+      "passed": true,
+      "evidence": "model_comparison.py lines 235-240: when ratio < 2, interpretation states 'The models are practically indistinguishable in predictive accuracy. Prefer the simpler model (Simple Linear Regression) unless domain knowledge strongly favors the hierarchical structure.' comparison_notes.md line 54: '< 2 | Models are practically indistinguishable | Prefer the simpler model (parsimony), unless domain knowledge strongly favors the complex one.'"
+    },
+    {
+      "text": "Provides a comparison table or structured output format",
+      "passed": true,
+      "evidence": "model_comparison.py lines 515-534 generate a formatted Markdown comparison table: '| Model | ELPD (LOO) | SE | Delta ELPD | Delta SE | Weight |' with values for each model. comparison_notes.md lines 138-141 provide a reporting template with the same structured table format. Additionally, line 203-204 prints the raw az.compare() table output."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  }
+}

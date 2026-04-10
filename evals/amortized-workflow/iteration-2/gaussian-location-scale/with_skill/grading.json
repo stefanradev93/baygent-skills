@@ -1,0 +1,90 @@
+{
+  "scenario": "gaussian-location-scale",
+  "condition": "with_skill",
+  "total_assertions": 16,
+  "passed": 16,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "assertions": [
+    {
+      "assertion": "Defines a prior function returning mu and sigma as a dict",
+      "result": "pass",
+      "evidence": "Lines 48-53: def prior(rng=None) returns {\"mu\": np.array(mu), \"sigma\": np.array(sigma)}"
+    },
+    {
+      "assertion": "Defines an observation model function that generates N i.i.d. draws given mu and sigma",
+      "result": "pass",
+      "evidence": "Lines 56-60: def observation_model(mu, sigma, rng=None) generates rng.normal(mu, sigma, size=50) and returns {\"x\": x}"
+    },
+    {
+      "assertion": "Uses bf.make_simulator() to create the simulator (not a manual Python loop)",
+      "result": "pass",
+      "evidence": "Line 63: simulator = bf.make_simulator([prior, observation_model])"
+    },
+    {
+      "assertion": "Uses bf.Adapter() with an explicit adapter chain (not just naming kwargs)",
+      "result": "pass",
+      "evidence": "Lines 102-109: bf.Adapter() with chained .as_set(), .constrain(), .convert_dtype(), .concatenate() calls"
+    },
+    {
+      "assertion": "Calls .constrain('sigma', lower=0) in the adapter for the positive parameter",
+      "result": "pass",
+      "evidence": "Line 105: .constrain(\"sigma\", lower=0)"
+    },
+    {
+      "assertion": "Calls .as_set() on the observations in the adapter",
+      "result": "pass",
+      "evidence": "Line 104: .as_set([\"x\"])"
+    },
+    {
+      "assertion": "Calls .convert_dtype('float64', 'float32') in the adapter",
+      "result": "pass",
+      "evidence": "Line 106: .convert_dtype(\"float64\", \"float32\")"
+    },
+    {
+      "assertion": "Uses a SetTransformer as the summary network (not DeepSet, not None)",
+      "result": "pass",
+      "evidence": "Lines 86-92: summary_net = bf.networks.SetTransformer(summary_dim=4, embed_dims=(32, 32), ...)"
+    },
+    {
+      "assertion": "Starts with the Small model configuration from references/model-sizes.md",
+      "result": "pass",
+      "evidence": "Lines 86-96: SetTransformer with embed_dims=(32,32), num_heads=(2,2), mlp_depths=(1,1), mlp_widths=(64,64); FlowMatching with widths=(128,128), time_embedding_dim=16. Analysis notes explicitly state 'Small config'."
+    },
+    {
+      "assertion": "Uses FlowMatching, DiffusionModel, or StableConsistencyModel as the inference network",
+      "result": "pass",
+      "evidence": "Lines 94-96: inference_net = bf.networks.FlowMatching(subnet_kwargs={\"widths\": (128, 128), \"time_embedding_dim\": 16})"
+    },
+    {
+      "assertion": "Passes validation_data= to the fit_* call",
+      "result": "pass",
+      "evidence": "Line 133: validation_data=300 in workflow.fit_online()"
+    },
+    {
+      "assertion": "Saves history.history as JSON and runs inspect_training or equivalent convergence check",
+      "result": "pass",
+      "evidence": "Lines 138-140: saves history.history as JSON. Line 143: training_report = inspect_history(history.history). Lines 147-150: checks training_report[\"overall\"][\"ok\"] and prints issues."
+    },
+    {
+      "assertion": "Uses workflow.simulate() for generating test data (not a Python loop)",
+      "result": "pass",
+      "evidence": "Line 157: test_data = workflow.simulate(300)"
+    },
+    {
+      "assertion": "Calls workflow.compute_default_diagnostics() and workflow.plot_default_diagnostics()",
+      "result": "pass",
+      "evidence": "Line 160: workflow.plot_default_diagnostics(test_data=test_data). Line 168: workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True)"
+    },
+    {
+      "assertion": "Runs check_diagnostics or manually checks ECE and NRMSE against house thresholds",
+      "result": "pass",
+      "evidence": "Line 174: diag_report = check_diagnostics(metrics). Lines 178-183: acts on STOP/WARN decisions from the report."
+    },
+    {
+      "assertion": "Accesses posterior samples by original parameter names (mu, sigma), NOT 'inference_variables'",
+      "result": "pass",
+      "evidence": "Lines 203-204: mu_samples = samples[\"mu\"][0, :, 0] and sigma_samples = samples[\"sigma\"][0, :, 0]."
+    }
+  ]
+}

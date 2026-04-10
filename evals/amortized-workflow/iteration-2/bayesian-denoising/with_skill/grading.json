@@ -1,0 +1,80 @@
+{
+  "scenario": "bayesian-denoising",
+  "condition": "with_skill",
+  "total_assertions": 14,
+  "passed": 14,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "assertions": [
+    {
+      "assertion": "Defines a BasicWorkflow without an explicit simulator",
+      "result": "pass",
+      "evidence": "Line 42: workflow = bf.BasicWorkflow(adapter=adapter, inference_network=inference_net) — no simulator argument passed."
+    },
+    {
+      "assertion": "Uses the clean images as inference_variables and the noisy images as inference_conditions",
+      "result": "pass",
+      "evidence": "Lines 75-78: adapter routes clean images as inference_variables and blurry images as inference_conditions via .concatenate() calls."
+    },
+    {
+      "assertion": "Does NOT flatten any of the images",
+      "result": "pass",
+      "evidence": "Images retained as (H, W, C) tensors throughout. No .reshape(-1) or .flatten() call anywhere in the code."
+    },
+    {
+      "assertion": "Does NOT use a summary network (SetTransformer, DeepSet, ConvolutionalNetwork, etc.)",
+      "result": "pass",
+      "evidence": "BasicWorkflow instantiated without summary_network argument. No summary_net defined anywhere in the script."
+    },
+    {
+      "assertion": "Uses a diffusion model or flow matching with a UNet architecture as a subnet",
+      "result": "pass",
+      "evidence": "Lines 33-38: inference_net = bf.networks.DiffusionModel(subnet=bf.networks.UNet(...)). UNet used as the denoising backbone."
+    },
+    {
+      "assertion": "Uses the fit_offline method of a BasicWorkflow",
+      "result": "pass",
+      "evidence": "Line 88: history = workflow.fit_offline(train_data=train_data, ...) — fit_offline called on the BasicWorkflow."
+    },
+    {
+      "assertion": "Uses bf.Adapter() with an explicit adapter chain (not just naming kwargs)",
+      "result": "pass",
+      "evidence": "Lines 55-78: bf.Adapter() with chained .convert_dtype(), .rename(), .concatenate() calls — explicit method chain."
+    },
+    {
+      "assertion": "Calls .convert_dtype('float64', 'float32') in the adapter",
+      "result": "pass",
+      "evidence": "Line 58: .convert_dtype(\"float64\", \"float32\") in the adapter chain."
+    },
+    {
+      "assertion": "Ensures conditioning tensor is spatially concatenable with the image target — same (B, H, W, C/D) shape",
+      "result": "pass",
+      "evidence": "Lines 20-25: Gaussian blur applied to produce blurry images of identical (28, 28, 1) shape as clean targets. Adapter routes both without reshaping."
+    },
+    {
+      "assertion": "Passes validation_data= to the fit_offline call",
+      "result": "pass",
+      "evidence": "Line 90: validation_data=val_data passed to workflow.fit_offline()."
+    },
+    {
+      "assertion": "Saves history.history as JSON and runs inspect_training or equivalent convergence check",
+      "result": "pass",
+      "evidence": "Lines 95-97: json.dump(history.history, f) saves to history.json. Line 100: inspect_history(history.history) called and convergence report printed."
+    },
+    {
+      "assertion": "Does NOT run scripts/check_diagnostics.py or conventional in-silico diagnostics for low-dimensional problems",
+      "result": "pass",
+      "evidence": "No call to check_diagnostics or compute_default_diagnostics anywhere. Analysis notes explicitly state: 'ECE/NRMSE diagnostics do not apply to image targets.'"
+    },
+    {
+      "assertion": "Creates and inspects a few posterior clean images for a few test examples (visual sample grid)",
+      "result": "pass",
+      "evidence": "Lines 115-130: generates 16 posterior samples per test image and plots a grid of noisy input, posterior samples, and clean ground truth."
+    },
+    {
+      "assertion": "References or follows references/image-generation.md guidance",
+      "result": "pass",
+      "evidence": "Analysis notes line 5: 'Following references/image-generation.md: use DiffusionModel + UNet, no summary network, images as inference_conditions'. Code structure matches image-generation.md recommendations."
+    }
+  ]
+}

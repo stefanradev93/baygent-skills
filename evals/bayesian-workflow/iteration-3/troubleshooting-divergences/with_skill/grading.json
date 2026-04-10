@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Explicitly states that results are unreliable and should NOT be interpreted",
+      "passed": true,
+      "evidence": "Executive summary states: 'Results from this model are unreliable and must not be interpreted until these issues are resolved.' Section 7 reiterates: 'Do not ignore the divergences and interpret results anyway.' Section 5 says: 'Do not interpret results until every check passes.'"
+    },
+    {
+      "text": "Identifies all three symptoms: divergences, high R-hat, stuck chain",
+      "passed": true,
+      "evidence": "Section 1.1 table explicitly lists all three: '47 divergences (out of 4000 draws)', 'R-hat = 1.03 on two parameters', and 'One chain stuck'. Each is described with meaning and severity."
+    },
+    {
+      "text": "Suggests non-centered reparameterization as a fix",
+      "passed": true,
+      "evidence": "Fix 1 (lines 135-183): Full non-centered reparameterization example with before/after code. Explains why it works: 'The non-centered version draws mu_raw from a fixed standard normal -- no dependence on sigma_group during sampling.'"
+    },
+    {
+      "text": "Suggests increasing target_accept (to 0.95 or higher)",
+      "passed": true,
+      "evidence": "Fix 0 (lines 110-133): 'target_accept=0.95, # default is ~0.8; try 0.95 first, then 0.99'. Code example shows pm.sample(..., target_accept=0.95, ...)."
+    },
+    {
+      "text": "Suggests checking for multimodality",
+      "passed": true,
+      "evidence": "Fix 4 (lines 249-278): 'Check for multimodality'. Provides code to compare per-chain means and detect if the stuck chain is in a different mode. Suggests identifiability checks, sum-to-zero constraints, and more tuning steps."
+    },
+    {
+      "text": "Provides concrete Python/PyMC code examples for at least two fixes",
+      "passed": true,
+      "evidence": "Fix 0 has code (lines 115-129). Fix 1 has before/after code (lines 141-178). Fix 2 has code (lines 189-203). Fix 3 has code (lines 215-245). Fix 4 has code (lines 253-278). Well over two fixes with concrete Python/PyMC code."
+    },
+    {
+      "text": "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)",
+      "passed": true,
+      "evidence": "Section 1.1 table: 'The threshold is R-hat <= 1.01; yours exceeds it.' Section 5 verification: 'R-hat: ALL parameters must be <= 1.01'. Appendix table: 'Healthy: <= 1.01'. The correct modern threshold of 1.01 is used throughout, never the outdated 1.1."
+    },
+    {
+      "text": "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)",
+      "passed": true,
+      "evidence": "Section 2.2: az.plot_trace(idata, kind='rank_vlines') and az.plot_pair(idata, ..., divergences=True). Section 2.3: az.plot_energy(idata). All three major diagnostic visualizations are suggested with code examples and interpretation guidance."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.00
+  }
+}

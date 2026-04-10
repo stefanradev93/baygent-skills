@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "hierarchical-schools",
+  "prompt": "I've got test scores for 200 students across 15 schools. I want to understand how much of the variation is between schools vs within schools, and get school-level estimates that account for different sample sizes. Some schools only have 5 students.",
+  "assertions": [
+    "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+    "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+    "Calls pm.sample_prior_predictive() before inference",
+    "Calls pm.sample_posterior_predictive() after inference",
+    "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+    "Includes shrinkage analysis showing small schools pulled toward grand mean",
+    "Computes ICC (intraclass correlation) or variance partition coefficient",
+    "Uses coords and dims in the PyMC model definition",
+    "Reports credible intervals (94% HDI preferred) for school-level estimates"
+  ]
+}

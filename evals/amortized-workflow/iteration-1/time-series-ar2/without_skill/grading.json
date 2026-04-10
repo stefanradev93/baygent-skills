@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "Defines a simulator that generates AR(2) time series of length 100",
+      "passed": true,
+      "evidence": "Lines 29-64: T=100 is set, observation_model generates AR(2) series with y[t] = phi1*y[t-1] + phi2*y[t-2] + noise. Line 67: bf.make_simulator([prior, observation_model])."
+    },
+    {
+      "text": "Routes the time series through summary_variables (not inference_conditions)",
+      "passed": true,
+      "evidence": "Line 127: .concatenate([\"y\"], into=\"summary_variables\") — the time series y is routed into summary_variables, not inference_conditions."
+    },
+    {
+      "text": "Does NOT use SetTransformer for the time series data",
+      "passed": true,
+      "evidence": "Line 94: Uses bf.networks.TimeSeriesTransformer, not SetTransformer. No SetTransformer appears anywhere in the code."
+    },
+    {
+      "text": "Uses TimeSeriesTransformer, TimeSeriesNetwork, or FusionTransformer as the summary network",
+      "passed": true,
+      "evidence": "Line 94: summary_network = bf.networks.TimeSeriesTransformer(...)."
+    },
+    {
+      "text": "Calls .constrain('sigma', lower=0) for the noise standard deviation",
+      "passed": true,
+      "evidence": "Line 124: .constrain(\"sigma\", lower=0)."
+    },
+    {
+      "text": "Does NOT flatten the time series into a single vector for inference_conditions",
+      "passed": true,
+      "evidence": "Line 123: .as_time_series([\"y\"]) reshapes to (T,1) for the transformer. Line 127: y goes into summary_variables. No flattening into inference_conditions anywhere."
+    },
+    {
+      "text": "Starts with the Small model configuration from references/model-sizes.md",
+      "passed": false,
+      "evidence": "Lines 94-103: Uses embed_dims=(64,64), num_heads=(4,4), mlp_widths=(128,128). There is no reference to model-sizes.md or any explicit mention of the 'Small' configuration. The architecture was chosen ad hoc (line 8 in analysis_notes.md says 'default-sized architecture')."
+    },
+    {
+      "text": "Passes validation_data= to the fit_* call",
+      "passed": true,
+      "evidence": "Line 157: validation_data=300 in workflow.fit_online(...)."
+    },
+    {
+      "text": "Saves and inspects training history (JSON + inspect_training or equivalent)",
+      "passed": false,
+      "evidence": "Lines 162-186: Training history is inspected via printed summary and a matplotlib plot, but it is NOT saved as JSON. No call to inspect_training or equivalent BayesFlow method. The history is only saved as a PNG plot, not as a JSON file."
+    },
+    {
+      "text": "Runs in-silico diagnostics and checks against house thresholds",
+      "passed": false,
+      "evidence": "Lines 192-209: Runs compute_default_diagnostics and plot_default_diagnostics, saves metrics to CSV and plots. However, there is no check against any specific thresholds — no conditional logic comparing diagnostic values to predefined thresholds. Metrics are printed and saved but never evaluated against pass/fail criteria."
+    },
+    {
+      "text": "Accesses posterior samples by original names (phi1, phi2, sigma), NOT 'inference_variables'",
+      "passed": true,
+      "evidence": "Lines 224-227: Accesses samples[\"phi1\"], samples[\"phi2\"], samples[\"sigma\"] by original parameter names. Lines 236-238 do the same for PPC."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 3,
+    "total": 11,
+    "pass_rate": 0.727
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {"text": "Builds a hierarchical/multilevel model with school-level and student-level parameters", "passed": true, "evidence": "Two-level hierarchical model with mu_global, mu_school (dims='school'), sigma_school, sigma_student, and Normal likelihood."},
+    {"text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)", "passed": true, "evidence": "mu_raw = pm.Normal('mu_raw', mu=0, sigma=1, dims='school') followed by mu_school = pm.Deterministic('mu_school', mu_global + mu_raw * sigma_school, dims='school')."},
+    {"text": "Calls pm.sample_prior_predictive() before inference", "passed": true, "evidence": "pm.sample_prior_predictive(random_seed=rng) called before pm.sample()."},
+    {"text": "Calls pm.sample_posterior_predictive() after inference", "passed": true, "evidence": "idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) called after pm.sample()."},
+    {"text": "Uses az.summary() or az.plot_trace() for convergence diagnostics", "passed": true, "evidence": "az.summary(idata, round_to=3) and az.plot_trace(idata, kind='rank_vlines') both used."},
+    {"text": "Includes shrinkage analysis showing small schools pulled toward grand mean", "passed": true, "evidence": "Full shrinkage plot with arrows from observed to posterior means, scatter points sized by sample size, global mean reference line."},
+    {"text": "Computes ICC (intraclass correlation) or variance partition coefficient", "passed": true, "evidence": "ICC computed as sigma_school^2 / (sigma_school^2 + sigma_student^2) with mean, 94% HDI, and interpretation."},
+    {"text": "Uses coords and dims in the PyMC model definition", "passed": true, "evidence": "coords = {'school': school_names, 'obs': ...}, pm.Model(coords=coords), dims used throughout."},
+    {"text": "Reports credible intervals (94% HDI preferred) for school-level estimates", "passed": true, "evidence": "az.summary with hdi_prob=0.94 and az.plot_forest with hdi_prob=0.94 for school-level estimates."},
+    {"text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)", "passed": true, "evidence": "azp.plot_ppc_pit(idata) for PPC-PIT and azp.plot_ppc_pit(idata, loo_pit=True) for LOO-PIT."}
+  ],
+  "summary": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0}
+}

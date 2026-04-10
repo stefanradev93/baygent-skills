@@ -1,0 +1,21 @@
+{
+  "eval_id": 7,
+  "eval_name": "bayesian-denoising",
+  "prompt": "I want to run simulation-based inference for image-based Bayesian denoising. You need to download the Fashion MNIST dataset using keras (https://keras.io/api/datasets/fashion_mnist/). Treat the clean images as targets ('parameters') and the corresponding blurry images (you need to apply Gaussian blur) as conditions ('data'). Set up a BayesFlow workflow with proper handling of images as targets. Use a small subset of the train data as validation data.",
+  "assertions": [
+    "Defines a BasicWorkflow without an explicit simulator",
+    "Uses the clean images as inference_variables and the noisy images as inference_conditions",
+    "Does NOT flatten any of the images",
+    "Does NOT use a summary network (SetTransformer, DeepSet, ConvolutionalNetwork, etc.)",
+    "Uses a diffusion model or flow matching with a UNet architecture as a subnet",
+    "Uses the fit_offline method of a BasicWorkflow",
+    "Uses bf.Adapter() with an explicit adapter chain (not just naming kwargs)",
+    "Calls .convert_dtype('float64', 'float32') in the adapter",
+    "Ensures conditioning tensor is spatially concatenable with the image target — same (B, H, W, C/D) shape",
+    "Passes validation_data= to the fit_offline call",
+    "Saves history.history as JSON and runs inspect_training or equivalent convergence check",
+    "Does NOT run scripts/check_diagnostics.py or conventional in-silico diagnostics for low-dimensional problems",
+    "Creates and inspects a few posterior clean images for a few test examples (visual sample grid)",
+    "References or follows references/image-generation.md guidance"
+  ]
+}

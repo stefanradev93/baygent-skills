@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {"text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood", "passed": true, "evidence": "Explicitly discusses overdispersion and uses pm.NegativeBinomial as the primary likelihood. Poisson built only as baseline."},
+    {"text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)", "passed": true, "evidence": "Explains: 'variance >> mean, so Poisson is insufficient — it constrains Var = Mean.' Provides NegBin variance formula."},
+    {"text": "Uses log-link function for count data", "passed": true, "evidence": "log_mu = intercept + beta_dow[dow_idx] + beta_release * release; mu = pm.math.exp(log_mu)."},
+    {"text": "Sets appropriate priors for count model parameters", "passed": true, "evidence": "Each prior justified: Normal(2,1) intercept, ZeroSumNormal for DOW, Normal(0,1) for release, Gamma(2,0.5) for alpha."},
+    {"text": "Calls pm.sample_prior_predictive() before inference", "passed": true, "evidence": "pm.sample_prior_predictive(random_seed=rng) called for both Poisson and NegBin models before pm.sample()."},
+    {"text": "Calls pm.sample_posterior_predictive() after inference", "passed": true, "evidence": "pm.sample_posterior_predictive called after sampling for both models."},
+    {"text": "Uses az.summary() or az.plot_trace() for convergence diagnostics", "passed": true, "evidence": "az.summary for both models, az.plot_trace with rank_vlines, plus programmatic R-hat/ESS/divergence checks."},
+    {"text": "Reports predictor effects with uncertainty intervals (HDI)", "passed": true, "evidence": "az.summary with hdi_prob=0.94, HDI for baseline tickets, release multiplier, and DOW effects."},
+    {"text": "Interprets effects on the natural count scale (not just log scale)", "passed": true, "evidence": "np.exp(intercept_samples) for baseline tickets, np.exp(beta_release_samples) for multiplier, DOW effects exponentiated."},
+    {"text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)", "passed": true, "evidence": "azp.plot_ppc_pit(idata_crit) for PPC-PIT and azp.plot_ppc_pit(idata_crit, loo_pit=True) for LOO-PIT."}
+  ],
+  "summary": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0}
+}

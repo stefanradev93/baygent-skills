@@ -1,0 +1,80 @@
+{
+  "scenario": "bayesian-denoising",
+  "condition": "without_skill",
+  "total_assertions": 14,
+  "passed": 12,
+  "failed": 2,
+  "pass_rate": 0.8571,
+  "assertions": [
+    {
+      "assertion": "Defines a BasicWorkflow without an explicit simulator",
+      "result": "pass",
+      "evidence": "BasicWorkflow instantiated without a simulator argument — data loaded directly from Fashion MNIST."
+    },
+    {
+      "assertion": "Uses the clean images as inference_variables and the noisy images as inference_conditions",
+      "result": "pass",
+      "evidence": "Adapter routes clean images into inference_variables and blurry images into inference_conditions via .concatenate() calls."
+    },
+    {
+      "assertion": "Does NOT flatten any of the images",
+      "result": "pass",
+      "evidence": "Images retain (H, W, C) shape throughout. No .flatten() or .reshape(-1) calls in the code."
+    },
+    {
+      "assertion": "Does NOT use a summary network (SetTransformer, DeepSet, ConvolutionalNetwork, etc.)",
+      "result": "pass",
+      "evidence": "BasicWorkflow created without summary_network argument. No summary network defined or referenced."
+    },
+    {
+      "assertion": "Uses a diffusion model or flow matching with a UNet architecture as a subnet",
+      "result": "pass",
+      "evidence": "inference_net = bf.networks.FlowMatching(subnet=bf.networks.UNet(...)) — FlowMatching with UNet subnet."
+    },
+    {
+      "assertion": "Uses the fit_offline method of a BasicWorkflow",
+      "result": "pass",
+      "evidence": "history = workflow.fit_offline(train_data=train_data, ...) — correct offline training path."
+    },
+    {
+      "assertion": "Uses bf.Adapter() with an explicit adapter chain (not just naming kwargs)",
+      "result": "fail",
+      "evidence": "Adapter only performs dtype conversion; routing is achieved via dict key naming (passing inference_variables= and inference_conditions= kwargs) rather than an explicit chained adapter. No .rename() or .concatenate() calls in the adapter."
+    },
+    {
+      "assertion": "Calls .convert_dtype('float64', 'float32') in the adapter",
+      "result": "pass",
+      "evidence": ".convert_dtype(\"float64\", \"float32\") present in the adapter."
+    },
+    {
+      "assertion": "Ensures conditioning tensor is spatially concatenable with the image target — same (B, H, W, C/D) shape",
+      "result": "pass",
+      "evidence": "Gaussian blur applied preserving (28, 28, 1) shape identical to clean targets."
+    },
+    {
+      "assertion": "Passes validation_data= to the fit_offline call",
+      "result": "pass",
+      "evidence": "validation_data=val_data passed to workflow.fit_offline()."
+    },
+    {
+      "assertion": "Saves history.history as JSON and runs inspect_training or equivalent convergence check",
+      "result": "pass",
+      "evidence": "history.history saved as JSON. Loss curves plotted and inspected for convergence."
+    },
+    {
+      "assertion": "Does NOT run scripts/check_diagnostics.py or conventional in-silico diagnostics for low-dimensional problems",
+      "result": "pass",
+      "evidence": "No call to check_diagnostics or compute_default_diagnostics. Evaluation is visual (sample grid inspection)."
+    },
+    {
+      "assertion": "Creates and inspects a few posterior clean images for a few test examples (visual sample grid)",
+      "result": "pass",
+      "evidence": "Generates and plots a grid of posterior samples alongside noisy inputs and ground truth clean images."
+    },
+    {
+      "assertion": "References or follows references/image-generation.md guidance",
+      "result": "fail",
+      "evidence": "Uses FlowMatching rather than DiffusionModel as specified in references/image-generation.md. No reference to or mention of image-generation.md in code or notes."
+    }
+  ]
+}

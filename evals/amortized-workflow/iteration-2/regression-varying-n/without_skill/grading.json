@@ -1,0 +1,70 @@
+{
+  "scenario": "regression-varying-n",
+  "condition": "without_skill",
+  "total_assertions": 12,
+  "passed": 10,
+  "failed": 2,
+  "pass_rate": 0.8333,
+  "assertions": [
+    {
+      "assertion": "Defines a meta function that returns varying N (e.g., np.random.randint(10, 200))",
+      "result": "pass",
+      "evidence": "Lines 56-60: meta_fn defined and returns dict with varying N via np.random.randint(10, 201)."
+    },
+    {
+      "assertion": "Uses bf.make_simulator() with meta_fn= for the variable sample size",
+      "result": "pass",
+      "evidence": "Line 63: bf.make_simulator([prior, observation_model], meta_fn=meta_fn)"
+    },
+    {
+      "assertion": "Uses bf.Adapter() with .as_set() on the (x, y) observations",
+      "result": "pass",
+      "evidence": "Line 100: .as_set([\"x\", \"y\"]) in the adapter chain."
+    },
+    {
+      "assertion": "Concatenates x and y into summary_variables as a (N, 2) set",
+      "result": "pass",
+      "evidence": "Lines 68-69: x and y stacked into (N, 2) array and returned as 'observables'; renamed to summary_variables in adapter."
+    },
+    {
+      "assertion": "Uses .broadcast() for N to match batch dimensions",
+      "result": "fail",
+      "evidence": "No .broadcast() call anywhere in the code. N is not explicitly tracked — variable N is handled via padding to N_MAX and masking instead."
+    },
+    {
+      "assertion": "Routes N (or sqrt(N)) as inference_conditions, not through the summary network",
+      "result": "pass",
+      "evidence": "Lines 104-106: N routed as inference_conditions via .rename(\"N\", \"inference_conditions\")."
+    },
+    {
+      "assertion": "Uses a SetTransformer as the summary network (data is exchangeable given parameters)",
+      "result": "pass",
+      "evidence": "Line 97: summary_net = bf.networks.SetTransformer(input_dim=2, summary_dim=32, ...)"
+    },
+    {
+      "assertion": "Calls .constrain('sigma', lower=0) for the positive noise parameter",
+      "result": "pass",
+      "evidence": "Line 102: .constrain(\"sigma\", lower=0)"
+    },
+    {
+      "assertion": "Passes validation_data= to the fit_* call",
+      "result": "pass",
+      "evidence": "Line 132: validation_data=300 in workflow.fit_online(...)."
+    },
+    {
+      "assertion": "Runs in-silico diagnostics with workflow.compute_default_diagnostics()",
+      "result": "pass",
+      "evidence": "Line 153: workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True)"
+    },
+    {
+      "assertion": "Posterior samples use original parameter names (alpha, beta, sigma)",
+      "result": "pass",
+      "evidence": "Lines 185-190: samples[\"alpha\"], samples[\"beta\"], samples[\"sigma\"] accessed by name."
+    },
+    {
+      "assertion": "Demonstrates or mentions posterior predictive checks reusing the observation model function",
+      "result": "fail",
+      "evidence": "No posterior predictive check performed or mentioned. Code reimplements the forward model inline at inference time rather than calling observation_model()."
+    }
+  ]
+}

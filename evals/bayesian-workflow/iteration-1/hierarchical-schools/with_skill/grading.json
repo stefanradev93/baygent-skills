@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+      "passed": true,
+      "evidence": "school_model.py defines a full hierarchical model with: population-level hyperpriors (mu_global, sigma_between), school-level parameters (mu_school via non-centered mu_raw), and a student-level likelihood (Normal with mu=mu_school[school_idx], sigma=sigma_within, observed=y). Lines 137-172."
+    },
+    {
+      "text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+      "passed": true,
+      "evidence": "school_model.py lines 155-158: mu_raw = pm.Normal('mu_raw', mu=0, sigma=1, dims='school') and mu_school = pm.Deterministic('mu_school', mu_global + mu_raw * sigma_between, dims='school'). This is the canonical non-centered parameterization."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "school_model.py line 175: prior_pred = pm.sample_prior_predictive(random_seed=RANDOM_SEED), called within the model context before pm.sample(). Results are then visualized in the prior predictive check section (lines 180-206)."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "school_model.py line 223: idata.extend(pm.sample_posterior_predictive(idata, random_seed=RANDOM_SEED)), called after pm.sample() completes. Posterior predictive samples are then used for PPC plotting via az.plot_ppc() at line 286."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "school_model.py line 233: summary = az.summary(idata, round_to=3) followed by R-hat and ESS checks. Lines 262-270: az.plot_trace(idata, var_names=[...], kind='rank_vlines') called twice for global parameters and school-level means. Both functions are used."
+    },
+    {
+      "text": "Includes shrinkage analysis showing small schools pulled toward grand mean",
+      "passed": true,
+      "evidence": "school_model.py lines 360-417: A full shrinkage plot is produced with arrows from observed (no-pooling) means to posterior (partial-pooling) means. Dot sizes are proportional to sample size (s=school_n*8). Title reads 'Shrinkage Plot: Partial Pooling Pulls Small Schools Toward Global Mean'. Print statements at lines 416-417 explicitly state: 'Schools with fewer students show more shrinkage toward the global mean.'"
+    },
+    {
+      "text": "Computes ICC (intraclass correlation) or variance partition coefficient",
+      "passed": true,
+      "evidence": "school_model.py lines 319-334: VPC/ICC computed as sigma_between^2 / (sigma_between^2 + sigma_within^2) over the full posterior. Reports mean and 94% HDI. The posterior distribution of VPC is also plotted (lines 419-431). analysis_notes.md lines 121-134 provide detailed interpretation."
+    },
+    {
+      "text": "Uses coords and dims in the PyMC model definition",
+      "passed": true,
+      "evidence": "school_model.py lines 132-135: coords = {'school': school_names, 'obs': np.arange(len(df))}. Line 137: pm.Model(coords=coords). dims='obs' used for Data containers (lines 139-140) and likelihood (line 172). dims='school' used for mu_raw (line 155) and mu_school (line 157)."
+    },
+    {
+      "text": "Reports credible intervals (94% HDI preferred) for school-level estimates",
+      "passed": true,
+      "evidence": "school_model.py line 345: az.summary(idata, var_names=['mu_school'], hdi_prob=0.94, round_to=2). Lines 348-357: az.plot_forest with hdi_prob=0.94 and title 'School-Level Mean Estimates (94% HDI)'. Population-level parameters also reported with 94% HDI (lines 338-341). VPC reported with 94% HDI (line 326)."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

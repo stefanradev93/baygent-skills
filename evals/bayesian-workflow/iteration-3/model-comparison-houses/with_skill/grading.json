@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Uses az.compare() or az.loo() for LOO-CV comparison",
+      "passed": true,
+      "evidence": "Line 310-311: loo_m1 = az.loo(idata_m1, pointwise=True) and loo_m2 = az.loo(idata_m2, pointwise=True) for individual model LOO. Line 349: comparison = az.compare(models) for head-to-head comparison."
+    },
+    {
+      "text": "Reports ELPD values with standard errors",
+      "passed": true,
+      "evidence": "Lines 466-475: Prints elpd_loo and se for both models from the comparison table. Lines 313-317: Prints full loo objects which include elpd_loo and SE."
+    },
+    {
+      "text": "Reports ELPD difference between models with its standard error (dse)",
+      "passed": true,
+      "evidence": "Lines 368-369: elpd_diff = comparison.loc[second_model, 'elpd_diff'] and dse = comparison.loc[second_model, 'dse']. Lines 374-376: Prints 'ELPD difference: X.XX' and 'SE of difference: X.XX'."
+    },
+    {
+      "text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+      "passed": true,
+      "evidence": "Lines 371-384: ratio = abs(elpd_diff) / dse. If ratio < 2: 'weak (models practically indistinguishable)'. If ratio < 4: 'moderate (consider domain knowledge)'. If ratio >= 4: 'strong (clear preference for best model)'. Uses 2x and 4x dse thresholds."
+    },
+    {
+      "text": "Checks and reports Pareto k diagnostics",
+      "passed": true,
+      "evidence": "Lines 320-327: Computes pareto_k for both models, identifies observations with k > 0.7, prints them. Lines 330-337: Plots Pareto k hat for both models side by side."
+    },
+    {
+      "text": "Mentions stacking weights as a complementary tool",
+      "passed": true,
+      "evidence": "Lines 386-388: Section titled '--- Stacking weights ---' that prints comparison[['weight']]. Line 348 notes 'az.compare uses stacking weights by default'."
+    },
+    {
+      "text": "Suggests preferring the simpler model if models are indistinguishable",
+      "passed": true,
+      "evidence": "Line 379: When ratio < 2, evidence is 'weak (models practically indistinguishable -- prefer simpler)'. Explicitly recommends preferring the simpler model."
+    },
+    {
+      "text": "Provides a comparison table or structured output format",
+      "passed": true,
+      "evidence": "Line 351: print(comparison) — prints the full az.compare comparison table. Lines 462-481: Final summary section with structured printout of ELPD_LOO, SE, Weight, and Warning for each model."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.00
+  }
+}

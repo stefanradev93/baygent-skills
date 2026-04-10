@@ -1,0 +1,19 @@
+{
+  "eval_id": 3,
+  "eval_name": "regression-varying-n",
+  "prompt": "I want to do amortized Bayesian inference for a simple linear regression y = alpha + beta*x + noise(sigma). The trick is that different datasets will have different sample sizes N, ranging from 10 to 200. I need the trained network to handle any N in that range. Set up the BayesFlow workflow with proper handling of the variable sample size.",
+  "assertions": [
+    "Defines a meta function that returns varying N (e.g., np.random.randint(10, 200))",
+    "Uses bf.make_simulator() with meta_fn= for the variable sample size",
+    "Uses bf.Adapter() with .as_set() on the (x, y) observations",
+    "Concatenates x and y into summary_variables as a (N, 2) set",
+    "Uses .broadcast() for N to match batch dimensions",
+    "Routes N (or sqrt(N)) as inference_conditions, not through the summary network",
+    "Uses a SetTransformer as the summary network (data is exchangeable given parameters)",
+    "Calls .constrain('sigma', lower=0) for the positive noise parameter",
+    "Passes validation_data= to the fit_* call",
+    "Runs in-silico diagnostics with workflow.compute_default_diagnostics()",
+    "Posterior samples use original parameter names (alpha, beta, sigma)",
+    "Demonstrates or mentions posterior predictive checks reusing the observation model function"
+  ]
+}

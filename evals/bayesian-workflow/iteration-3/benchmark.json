@@ -1,0 +1,1519 @@
+{
+  "skill_name": "bayesian-workflow",
+  "iteration": 3,
+  "configs": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {
+          "eval_name": "logistic-regression-churn",
+          "pass_rate": 0.93,
+          "passed": 14,
+          "total": 15,
+          "expectations": [
+            {
+              "text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+              "passed": true,
+              "evidence": "Line 145: pm.Bernoulli('churn_obs', logit_p=mu, observed=y_data, dims='obs_id') \u2014 uses pm.Bernoulli with logit_p parameterization (logit inverse-link)."
+            },
+            {
+              "text": "Standardizes or scales predictors before fitting the model",
+              "passed": true,
+              "evidence": "Lines 96-107: Predictors are explicitly standardized to zero mean and unit variance (df_z DataFrame with age_z, tenure_z, spend_z, tickets_z). Means and SDs are stored for back-transformation."
+            },
+            {
+              "text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+              "passed": true,
+              "evidence": "Line 136: beta = pm.Normal('beta', mu=0, sigma=1.5, dims='predictor') \u2014 sigma=1.5 is within the [1, 5] range. Line 129: alpha = pm.Normal('alpha', mu=0, sigma=1.5) also uses sigma=1.5. Both include justification comments."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() before inference",
+              "passed": true,
+              "evidence": "Line 159: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called before pm.sample() on line 209."
+            },
+            {
+              "text": "Calls pm.sample() for MCMC inference without hardcoding chains (no chains=4 or similar)",
+              "passed": true,
+              "evidence": "Line 209: idata = pm.sample(nuts_sampler='nutpie', random_seed=rng) \u2014 no chains argument is passed. Comment on line 208 explicitly says 'Don't hardcode number of chains'."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive() after inference",
+              "passed": true,
+              "evidence": "Line 271: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after pm.sample()."
+            },
+            {
+              "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+              "passed": true,
+              "evidence": "Line 220: summary = az.summary(idata, round_to=3). Line 252: axes_trace = az.plot_trace(idata, kind='rank_vlines'). Both are used."
+            },
+            {
+              "text": "Reports 94% HDI (not 95% CI) for parameter estimates",
+              "passed": true,
+              "evidence": "Line 364: az.plot_forest(..., hdi_prob=0.94). Line 375: az.plot_posterior(..., hdi_prob=0.94). Line 418: '94% HDI' column header. Line 436: label='94% HDI'. Results consistently use 94% HDI throughout."
+            },
+            {
+              "text": "Uses coords and dims in the PyMC model definition",
+              "passed": true,
+              "evidence": "Lines 113-116: coords = {'predictor': predictor_names, 'obs_id': np.arange(N)}. Line 120: pm.Model(coords=coords). Lines 122-123: dims=('obs_id', 'predictor') and dims='obs_id'. Line 136: dims='predictor'."
+            },
+            {
+              "text": "Documents prior choices with justification comments in the code",
+              "passed": true,
+              "evidence": "Lines 126-135: Detailed comments explaining intercept prior (Normal(0, 1.5) covers base rates 5%-80% churn) and coefficient priors (sigma=1.5 allows 1-SD change to shift log-odds by +/-3, mapping probability from ~5% to ~95%)."
+            },
+            {
+              "text": "Uses a descriptive random seed (sum(map(ord, ...)) pattern or similar), not a magic number like 42",
+              "passed": true,
+              "evidence": "Line 47: RANDOM_SEED = sum(map(ord, 'churn-logistic-v1')) \u2014 uses the sum(map(ord, ...)) pattern with a descriptive analysis name."
+            },
+            {
+              "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar), not custom plotting code",
+              "passed": true,
+              "evidence": "Line 301: azp.plot_ppc_pit(idata) \u2014 uses arviz_plots' plot_ppc_pit function. Line 311: azp.plot_ppc_pit(idata, loo_pit=True) \u2014 also runs LOO-PIT calibration."
+            },
+            {
+              "text": "Saves InferenceData to disk (idata.to_netcdf or similar) after sampling",
+              "passed": true,
+              "evidence": "Line 275: idata.to_netcdf('churn_model_output.nc') \u2014 saves after posterior predictive sampling is complete."
+            },
+            {
+              "text": "Uses xarray operations (.sel, .mean(dim=...), etc.) over numpy for InferenceData manipulation",
+              "passed": true,
+              "evidence": "Lines 162-167: prior_churn_rates.mean(), .std(), .quantile() on xarray DataArray. Lines 285-290: idata.posterior_predictive['churn_obs'].mean(dim='obs_id'), .quantile(). Lines 399-414: xr.DataArray, xr.dot, .mean(dim=['chain', 'draw']), .quantile(dim=['chain', 'draw'])."
+            },
+            {
+              "text": "Generates a companion analysis notes file (markdown) interpreting the results",
+              "passed": false,
+              "evidence": "File not generated (subagent permission issue)"
+            }
+          ]
+        },
+        {
+          "eval_name": "hierarchical-schools",
+          "pass_rate": 0.91,
+          "passed": 10,
+          "total": 11,
+          "expectations": [
+            {
+              "text": "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+              "passed": true,
+              "evidence": "Lines 127-157: Model has population-level hyperpriors (mu_global, sigma_between), school-level parameters (mu_school via school_offset), and student-level likelihood (Normal with sigma_within). Students nested within schools."
+            },
+            {
+              "text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+              "passed": true,
+              "evidence": "Lines 144-149: school_offset = pm.Normal('school_offset', mu=0, sigma=1, dims='school') followed by mu_school = pm.Deterministic('mu_school', mu_global + school_offset * sigma_between, dims='school'). Classic non-centered parameterization."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() before inference",
+              "passed": true,
+              "evidence": "Line 162: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called within the model context before pm.sample() on line 193."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive() after inference",
+              "passed": true,
+              "evidence": "Line 197: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after pm.sample()."
+            },
+            {
+              "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+              "passed": true,
+              "evidence": "Line 218: summary = az.summary(idata, round_to=3). Line 237: az.plot_trace(idata, var_names=[...], kind='rank_vlines'). Both used."
+            },
+            {
+              "text": "Includes shrinkage analysis showing small schools pulled toward grand mean",
+              "passed": true,
+              "evidence": "Lines 377-417: Full shrinkage plot comparing observed (no-pooling) school means vs posterior (partial-pooling) means. Points sized by number of students (s=sizes*5). Annotations show n=X for each school. Red dashed line for no pooling, gray line for complete pooling (grand mean). Title: 'Shrinkage Plot: Partial Pooling Toward Grand Mean'."
+            },
+            {
+              "text": "Computes ICC (intraclass correlation) or variance partition coefficient",
+              "passed": true,
+              "evidence": "Lines 419-450: ICC computed as sigma_between^2 / (sigma_between^2 + sigma_within^2) using posterior draws. Reports mean and 94% HDI. Prints interpretation: '~X% of the total variance in test scores is attributable to differences between schools'. Also plots the ICC posterior distribution."
+            },
+            {
+              "text": "Uses coords and dims in the PyMC model definition",
+              "passed": true,
+              "evidence": "Lines 122-125: coords = {'school': school_names, 'obs': np.arange(len(df))}. Line 127: pm.Model(coords=coords). Lines 129-157: dims='obs', dims='school' used throughout."
+            },
+            {
+              "text": "Reports credible intervals (94% HDI preferred) for school-level estimates",
+              "passed": true,
+              "evidence": "Line 425: icc_hdi = az.hdi(icc_draws, hdi_prob=0.94). Line 454: az.plot_forest(idata, var_names=['mu_school'], combined=True) which defaults to 94% HDI. Line 455: Title 'School-Level Mean Estimates (94% HDI)'. Line 485: az.summary for school-level estimates (defaults to 94% HDI)."
+            },
+            {
+              "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)",
+              "passed": true,
+              "evidence": "Lines 322-367: Uses azp.plot_ppc_pit(idata) for PPC-PIT calibration, and azp.plot_ppc_pit(idata, loo_pit=True) for LOO-PIT. Falls back to az.plot_loo_pit if arviz_plots is unavailable."
+            },
+            {
+              "text": "Generates a companion analysis notes file (markdown) interpreting the results and diagnostics",
+              "passed": false,
+              "evidence": "File not generated (subagent permission issue)"
+            }
+          ]
+        },
+        {
+          "eval_name": "troubleshooting-divergences",
+          "pass_rate": 1.0,
+          "passed": 8,
+          "total": 8,
+          "expectations": [
+            {
+              "text": "Explicitly states that results are unreliable and should NOT be interpreted",
+              "passed": true,
+              "evidence": "Executive summary states: 'Results from this model are unreliable and must not be interpreted until these issues are resolved.' Section 7 reiterates: 'Do not ignore the divergences and interpret results anyway.' Section 5 says: 'Do not interpret results until every check passes.'"
+            },
+            {
+              "text": "Identifies all three symptoms: divergences, high R-hat, stuck chain",
+              "passed": true,
+              "evidence": "Section 1.1 table explicitly lists all three: '47 divergences (out of 4000 draws)', 'R-hat = 1.03 on two parameters', and 'One chain stuck'. Each is described with meaning and severity."
+            },
+            {
+              "text": "Suggests non-centered reparameterization as a fix",
+              "passed": true,
+              "evidence": "Fix 1 (lines 135-183): Full non-centered reparameterization example with before/after code. Explains why it works: 'The non-centered version draws mu_raw from a fixed standard normal -- no dependence on sigma_group during sampling.'"
+            },
+            {
+              "text": "Suggests increasing target_accept (to 0.95 or higher)",
+              "passed": true,
+              "evidence": "Fix 0 (lines 110-133): 'target_accept=0.95, # default is ~0.8; try 0.95 first, then 0.99'. Code example shows pm.sample(..., target_accept=0.95, ...)."
+            },
+            {
+              "text": "Suggests checking for multimodality",
+              "passed": true,
+              "evidence": "Fix 4 (lines 249-278): 'Check for multimodality'. Provides code to compare per-chain means and detect if the stuck chain is in a different mode. Suggests identifiability checks, sum-to-zero constraints, and more tuning steps."
+            },
+            {
+              "text": "Provides concrete Python/PyMC code examples for at least two fixes",
+              "passed": true,
+              "evidence": "Fix 0 has code (lines 115-129). Fix 1 has before/after code (lines 141-178). Fix 2 has code (lines 189-203). Fix 3 has code (lines 215-245). Fix 4 has code (lines 253-278). Well over two fixes with concrete Python/PyMC code."
+            },
+            {
+              "text": "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)",
+              "passed": true,
+              "evidence": "Section 1.1 table: 'The threshold is R-hat <= 1.01; yours exceeds it.' Section 5 verification: 'R-hat: ALL parameters must be <= 1.01'. Appendix table: 'Healthy: <= 1.01'. The correct modern threshold of 1.01 is used throughout, never the outdated 1.1."
+            },
+            {
+              "text": "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)",
+              "passed": true,
+              "evidence": "Section 2.2: az.plot_trace(idata, kind='rank_vlines') and az.plot_pair(idata, ..., divergences=True). Section 2.3: az.plot_energy(idata). All three major diagnostic visualizations are suggested with code examples and interpretation guidance."
+            }
+          ]
+        },
+        {
+          "eval_name": "count-data-overdispersion",
+          "pass_rate": 0.91,
+          "passed": 10,
+          "total": 11,
+          "expectations": [
+            {
+              "text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+              "passed": true,
+              "evidence": "Line 130: pm.NegativeBinomial('tickets', mu=pm.math.exp(log_mu), alpha=alpha, ...). Lines 84-86 compute and print variance/mean ratio confirming overdispersion. A Poisson model is also fit (line 361) but explicitly as a baseline for comparison."
+            },
+            {
+              "text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+              "passed": true,
+              "evidence": "Lines 4-6: 'The variance appears larger than the mean, suggesting overdispersion. We model ticket counts using a Negative Binomial likelihood (which naturally handles overdispersion).' Lines 85-86: prints 'Variance / Mean: ... (>>1 = overdispersed)'. Lines 128-129: 'NegativeBinomial parameterized by mu and alpha: Var(Y) = mu + mu^2 / alpha'."
+            },
+            {
+              "text": "Uses log-link function for count data",
+              "passed": true,
+              "evidence": "Line 125: log_mu = intercept + dow_effect[dow_idx] + release_effect * release. Line 132: mu=pm.math.exp(log_mu) \u2014 linear predictor is on the log scale, exponentiated for the likelihood. This is the canonical log-link for count data."
+            },
+            {
+              "text": "Sets appropriate priors for count model parameters",
+              "passed": true,
+              "evidence": "Line 108: intercept ~ Normal(log(10), 1.0) \u2014 centered on log of expected baseline count. Line 113: dow_effect ~ ZeroSumNormal(sigma=0.5). Line 118: release_effect ~ Normal(0.5, 0.5). Line 122: alpha ~ Gamma(2, 0.5). All priors have justification comments explaining the parameter choices."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() before inference",
+              "passed": true,
+              "evidence": "Line 140: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called before pm.sample() on line 170."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive() after inference",
+              "passed": true,
+              "evidence": "Line 178: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after pm.sample()."
+            },
+            {
+              "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+              "passed": true,
+              "evidence": "Line 192: summary = az.summary(idata, round_to=3). Line 207: az.plot_trace(idata, kind='rank_vlines'). Both used."
+            },
+            {
+              "text": "Reports predictor effects with uncertainty intervals (HDI)",
+              "passed": true,
+              "evidence": "Line 433: summary_94 = az.summary(idata, hdi_prob=0.94, round_to=3) \u2014 reports all parameters with 94% HDI. Lines 440-444: Release effect with 94% HDI on both log and rate scales. Lines 448-453: Day-of-week effects each with 94% HDI."
+            },
+            {
+              "text": "Interprets effects on the natural count scale (not just log scale)",
+              "passed": true,
+              "evidence": "Lines 437-444: release_multiplier = np.exp(release_samples) \u2014 converts to rate multiplier. Prints 'Release multiplier (rate scale): mean = X.XXx, 94% HDI = [X.XXx, X.XXx]'. Line 461-462: Also interprets Var/Mean ratio on the natural scale."
+            },
+            {
+              "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)",
+              "passed": true,
+              "evidence": "Lines 274-302: Uses azp.plot_ppc_pit(idata) for PPC-PIT calibration. Falls back to az.plot_loo_pit if needed."
+            },
+            {
+              "text": "Generates a companion analysis notes file (markdown) interpreting the results",
+              "passed": false,
+              "evidence": "File not generated (subagent permission issue)"
+            }
+          ]
+        },
+        {
+          "eval_name": "model-comparison-houses",
+          "pass_rate": 1.0,
+          "passed": 8,
+          "total": 8,
+          "expectations": [
+            {
+              "text": "Uses az.compare() or az.loo() for LOO-CV comparison",
+              "passed": true,
+              "evidence": "Line 310-311: loo_m1 = az.loo(idata_m1, pointwise=True) and loo_m2 = az.loo(idata_m2, pointwise=True) for individual model LOO. Line 349: comparison = az.compare(models) for head-to-head comparison."
+            },
+            {
+              "text": "Reports ELPD values with standard errors",
+              "passed": true,
+              "evidence": "Lines 466-475: Prints elpd_loo and se for both models from the comparison table. Lines 313-317: Prints full loo objects which include elpd_loo and SE."
+            },
+            {
+              "text": "Reports ELPD difference between models with its standard error (dse)",
+              "passed": true,
+              "evidence": "Lines 368-369: elpd_diff = comparison.loc[second_model, 'elpd_diff'] and dse = comparison.loc[second_model, 'dse']. Lines 374-376: Prints 'ELPD difference: X.XX' and 'SE of difference: X.XX'."
+            },
+            {
+              "text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+              "passed": true,
+              "evidence": "Lines 371-384: ratio = abs(elpd_diff) / dse. If ratio < 2: 'weak (models practically indistinguishable)'. If ratio < 4: 'moderate (consider domain knowledge)'. If ratio >= 4: 'strong (clear preference for best model)'. Uses 2x and 4x dse thresholds."
+            },
+            {
+              "text": "Checks and reports Pareto k diagnostics",
+              "passed": true,
+              "evidence": "Lines 320-327: Computes pareto_k for both models, identifies observations with k > 0.7, prints them. Lines 330-337: Plots Pareto k hat for both models side by side."
+            },
+            {
+              "text": "Mentions stacking weights as a complementary tool",
+              "passed": true,
+              "evidence": "Lines 386-388: Section titled '--- Stacking weights ---' that prints comparison[['weight']]. Line 348 notes 'az.compare uses stacking weights by default'."
+            },
+            {
+              "text": "Suggests preferring the simpler model if models are indistinguishable",
+              "passed": true,
+              "evidence": "Line 379: When ratio < 2, evidence is 'weak (models practically indistinguishable -- prefer simpler)'. Explicitly recommends preferring the simpler model."
+            },
+            {
+              "text": "Provides a comparison table or structured output format",
+              "passed": true,
+              "evidence": "Line 351: print(comparison) \u2014 prints the full az.compare comparison table. Lines 462-481: Final summary section with structured printout of ELPD_LOO, SE, Weight, and Warning for each model."
+            }
+          ]
+        },
+        {
+          "eval_name": "prior-elicitation-report",
+          "pass_rate": 0.7,
+          "passed": 7,
+          "total": 10,
+          "expectations": [
+            {
+              "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+              "passed": true,
+              "evidence": "Lines 106-112: 'treatment_effect ~ Normal(-7.5, 6.25). Justification: Based on the user's domain knowledge that similar drugs produce effects from -20 to +5 mmHg. We center the prior at the midpoint of [-20, +5] = -7.5, and set sigma = (5 - (-20)) / 4 = 6.25, so that the prior 94% interval spans roughly [-20, +5].' Clear mathematical translation from domain range to distribution parameters."
+            },
+            {
+              "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+              "passed": true,
+              "evidence": "Lines 165-207: Full prior predictive check section. pm.sample_prior_predictive() is called and results are visualized and assessed. The prior predictive distribution is compared against the plausible range [-20, +5] with red reference lines. PreliZ is not mentioned, but prior predictive checks are extensively used as the validation method."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() to check priors",
+              "passed": true,
+              "evidence": "Line 171: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called and results extensively analyzed in lines 173-207."
+            },
+            {
+              "text": "Documents prior justifications in the code or notes",
+              "passed": true,
+              "evidence": "Lines 96-118: Extensive prior justification section. Each prior has a detailed comment: mu_control ~ Normal(-2, 5) with rationale for centering and scale; treatment_effect ~ Normal(-7.5, 6.25) derived from user's stated range; sigma ~ Gamma(2, 0.3) justified by typical BP variability and computational considerations."
+            },
+            {
+              "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+              "passed": true,
+              "evidence": "Line 234: summary = az.summary(idata, ..., round_to=3). Lines 259-263: az.plot_trace(idata, ..., kind='rank_vlines'). Lines 270-272: az.plot_energy(idata). All three diagnostic methods used."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive()",
+              "passed": true,
+              "evidence": "Line 282: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after inference."
+            },
+            {
+              "text": "Generates a structured report suitable for a non-technical audience",
+              "passed": false,
+              "evidence": "File not generated (subagent permission issue)"
+            },
+            {
+              "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+              "passed": true,
+              "evidence": "Lines 434-445: 'Probability drug lowers BP: X.X%', 'Probability of clinically meaningful effect (>5 mmHg): X.X%'. Lines 442-443: '94% HDI: [X.X, X.X] mmHg'. No p-values or 'significant' language anywhere in the code. Uses 'credible intervals', 'posterior', 'probability' throughout."
+            },
+            {
+              "text": "Explains concepts in an accessible way for a Bayesian beginner",
+              "passed": false,
+              "evidence": "The code itself contains technical comments aimed at practitioners, not beginner explanations. The companion report (medical_board_report.md) that would have explained concepts accessibly was not generated. The code does not include beginner-friendly explanations of what credible intervals, posteriors, or priors mean."
+            },
+            {
+              "text": "Recommends conda-forge or mamba-forge for PyMC installation (not pip)",
+              "passed": false,
+              "evidence": "No installation instructions are present in the output file. Neither conda-forge nor mamba-forge (nor pip) is mentioned anywhere in drug_trial_model.py."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {
+          "eval_name": "logistic-regression-churn",
+          "pass_rate": 0.9,
+          "passed": 9,
+          "total": 10,
+          "expectations": [
+            {
+              "text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+              "passed": true,
+              "evidence": "churn_model.py line 200: pm.Bernoulli('churn', logit_p=logit_p, observed=y_data) -- uses Bernoulli with logit_p parameter (logit inverse-link)."
+            },
+            {
+              "text": "Standardizes or scales predictors before fitting the model",
+              "passed": true,
+              "evidence": "churn_model.py lines 119-121: StandardScaler().fit_transform(X_train) applied before modeling. Also documented in analysis_notes.md Section 3."
+            },
+            {
+              "text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+              "passed": true,
+              "evidence": "churn_model.py line 194: pm.Normal('betas', mu=0, sigma=1, shape=X_train.shape[1]) -- sigma=1 is within [1, 5]. Intercept has sigma=1.5 (line 193)."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() before inference",
+              "passed": true,
+              "evidence": "churn_model.py lines 559-561: pm.sample_prior_predictive(samples=1000, ...) called in prior_predictive_check(). In main(), prior_predictive_check is called at line 679 before fit_model at line 688."
+            },
+            {
+              "text": "Calls pm.sample() for MCMC inference",
+              "passed": true,
+              "evidence": "churn_model.py lines 218-226: pm.sample(draws=2000, tune=1000, chains=4, ...) called inside fit_model()."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive() after inference",
+              "passed": true,
+              "evidence": "churn_model.py lines 355-360: pm.sample_posterior_predictive(idata, ...) called in posterior_predictions(), which runs after fit_model in main() (line 698)."
+            },
+            {
+              "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+              "passed": true,
+              "evidence": "churn_model.py line 248: az.summary(idata, var_names=['intercept', 'betas'], hdi_prob=0.94). Also line 297: az.plot_trace(idata, ...). Both used in diagnostics functions."
+            },
+            {
+              "text": "Reports 94% HDI (not 95% CI) for parameter estimates",
+              "passed": true,
+              "evidence": "churn_model.py line 249: az.summary(..., hdi_prob=0.94). Also lines 304, 313, 495, 507 all use hdi_prob=0.94. analysis_notes.md Section 8 explicitly explains the 94% HDI preference."
+            },
+            {
+              "text": "Uses coords and dims in the PyMC model definition",
+              "passed": false,
+              "evidence": "churn_model.py build_model() (lines 187-202) does not use coords or dims. Parameters are defined with shape=X_train.shape[1] instead of named dims. No coords dict is passed to pm.Model()."
+            },
+            {
+              "text": "Documents prior choices with justification comments in the code",
+              "passed": true,
+              "evidence": "churn_model.py lines 166-185: detailed docstring in build_model() explaining intercept Normal(0,1.5) and betas Normal(0,1) choices with logit-scale reasoning and Gelman et al. (2008) reference. Also in analysis_notes.md Section 4."
+            }
+          ]
+        },
+        {
+          "eval_name": "hierarchical-schools",
+          "pass_rate": 0.89,
+          "passed": 8,
+          "total": 9,
+          "expectations": [
+            {
+              "text": "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+              "passed": true,
+              "evidence": "The model in school_model.py (lines 207-249) defines a full hierarchical model with hyperpriors mu_global, sigma_between (school-level variance), sigma_within (student-level variance), and school-level means mu_school derived via school_offset. The likelihood y_obs ~ Normal(mu_school[school_id], sigma_within) links student scores to school-level parameters."
+            },
+            {
+              "text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+              "passed": true,
+              "evidence": "Lines 223-224 of school_model.py: 'school_offset = pm.Normal(\"school_offset\", mu=0, sigma=1, shape=N_SCHOOLS)' followed by 'mu_school = pm.Deterministic(\"mu_school\", mu_global + sigma_between * school_offset)'. This is the standard non-centered parameterization. The analysis_notes.md also explains the rationale for avoiding the funnel geometry."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() before inference",
+              "passed": true,
+              "evidence": "Line 172 of school_model.py: 'prior_pred = pm.sample_prior_predictive(samples=500, random_seed=RANDOM_SEED)' is called within the prior_model context before the main hierarchical_model sampling. Prior predictive distributions are visualized in lines 175-200."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive() after inference",
+              "passed": true,
+              "evidence": "Line 252 of school_model.py: 'post_pred = pm.sample_posterior_predictive(trace, random_seed=RANDOM_SEED)' is called after pm.sample() completes. The results are used for posterior predictive checks in lines 354-423."
+            },
+            {
+              "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+              "passed": true,
+              "evidence": "Both are used. Line 264: 'summary = az.summary(trace, var_names=[\"mu_global\", \"sigma_between\", \"sigma_within\", \"icc\", \"mu_school\"], round_to=2)'. Line 306: 'az.plot_trace(trace, var_names=[\"mu_global\", \"sigma_between\", \"sigma_within\", \"icc\"], figsize=(14, 10))'. Additionally, az.rhat(), az.ess(), az.plot_rank(), and az.plot_energy() are used for comprehensive diagnostics."
+            },
+            {
+              "text": "Includes shrinkage analysis showing small schools pulled toward grand mean",
+              "passed": true,
+              "evidence": "Lines 452-473 of school_model.py compute and print a detailed shrinkage table for each school showing observed mean, posterior mean, shrinkage percentage, and true mean, with small schools (n=5) showing the most shrinkage. Lines 480-528 produce a shrinkage visualization with arrows from observed to posterior means. The analysis_notes.md (lines 125-135) explicitly states 'Small schools (n=5) are shrunk the most toward the grand mean'."
+            },
+            {
+              "text": "Computes ICC (intraclass correlation) or variance partition coefficient",
+              "passed": true,
+              "evidence": "Line 229-231 of school_model.py: 'icc = pm.Deterministic(\"icc\", sigma_between**2 / (sigma_between**2 + sigma_within**2))' computes ICC as a derived quantity within the model. Lines 437-449 report ICC posterior statistics with 94% HDI. Lines 535-554 visualize the ICC posterior distribution with az.plot_posterior(). The analysis_notes.md provides detailed interpretation of ICC values."
+            },
+            {
+              "text": "Uses coords and dims in the PyMC model definition",
+              "passed": false,
+              "evidence": "Neither the prior_model (lines 153-168) nor the hierarchical_model (lines 207-249) use coords or dims arguments. Instead, the model uses 'shape=N_SCHOOLS' for the school_offset parameter and raw integer indexing 'data[\"school_id\"].values' for the likelihood. Modern PyMC best practice is to define coords={'school': school_names} and use dims='school' for labeled dimensions."
+            },
+            {
+              "text": "Reports credible intervals (94% HDI preferred) for school-level estimates",
+              "passed": true,
+              "evidence": "Line 369: 'posterior_hdi = az.hdi(trace, var_names=[\"mu_school\"])[\"mu_school\"].values' computes HDI for school means. Line 383 labels these as '94% HDI'. Lines 561-568 create a forest plot with 'hdi_prob=0.94'. Line 542 uses 'hdi_prob=0.94' for the ICC posterior plot. The variance decomposition section (lines 440-445) also reports 94% HDI intervals for sigma_between, sigma_within, and ICC."
+            }
+          ]
+        },
+        {
+          "eval_name": "troubleshooting-divergences",
+          "pass_rate": 0.875,
+          "passed": 7,
+          "total": 8,
+          "expectations": [
+            {
+              "text": "Explicitly states that results are unreliable and should NOT be interpreted",
+              "passed": false,
+              "evidence": "The output says 'the resulting samples do not faithfully represent the posterior distribution' and 'entire regions of the posterior are being systematically missed,' which implies unreliability. However, it never explicitly states that the current results should NOT be interpreted or used for inference. The document focuses on diagnosis and fixes rather than issuing a direct warning against interpreting the results."
+            },
+            {
+              "text": "Identifies all three symptoms: divergences, high R-hat, stuck chain",
+              "passed": true,
+              "evidence": "All three symptoms are clearly identified in the summary table (lines 5-9): 'Divergences: 47 / 4000 samples' marked PROBLEMATIC, 'R-hat: 1.03 (two parameters)' marked PROBLEMATIC, and 'Trace plots: One chain stuck' marked PROBLEMATIC. Each symptom is then discussed in dedicated subsections (1.1 'What divergences mean', 1.2 'What elevated R-hat means', 1.3 'What a stuck chain means')."
+            },
+            {
+              "text": "Suggests non-centered reparameterization as a fix",
+              "passed": true,
+              "evidence": "Fix 1 (lines 104-143) is entirely dedicated to non-centered reparameterization, described as 'the single most effective fix for divergences in hierarchical models.' It provides both the problematic centered parameterization and the corrected non-centered version with full PyMC code, along with a clear explanation of why it works (breaking the funnel dependency)."
+            },
+            {
+              "text": "Suggests increasing target_accept (to 0.95 or higher)",
+              "passed": true,
+              "evidence": "Fix 2 (lines 145-162) explicitly recommends increasing target_accept, with code showing 'target_accept=0.95' and guidelines suggesting to 'Start with 0.90, then try 0.95, then 0.99 if needed.' The fix is appropriately labeled as a 'palliative measure, not a cure.'"
+            },
+            {
+              "text": "Suggests checking for multimodality",
+              "passed": true,
+              "evidence": "Line 28 explicitly mentions multimodality as a potential cause of a stuck chain: 'It has become trapped in a local mode of a multimodal posterior.' While the document does not suggest a dedicated multimodality diagnostic procedure, it identifies multimodality as a possible root cause of the observed symptoms."
+            },
+            {
+              "text": "Provides concrete Python/PyMC code examples for at least two fixes",
+              "passed": true,
+              "evidence": "The output provides extensive Python/PyMC code examples for multiple fixes: (1) non-centered reparameterization with full centered vs. non-centered model code (lines 112-141), (2) increasing target_accept with pm.sample() code (lines 149-157), (3) informative priors with code examples (lines 169-176), (4) increasing tuning samples with code (lines 196-204), (5) mass matrix estimation with code (lines 212-219), (6) adding chains with code (lines 232-241), and (7) handling correlations with code (lines 248-266). Well exceeds the 'at least two' requirement."
+            },
+            {
+              "text": "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)",
+              "passed": true,
+              "evidence": "The correct modern threshold of 1.01 is explicitly mentioned in multiple places: the summary table shows 'Acceptable Threshold: < 1.01' (line 8), section 1.2 states 'An R-hat of 1.03 on two parameters exceeds the modern recommended threshold of 1.01 (Vehtari et al., 2021)' (line 23), and the convergence targets section states 'All R-hat values < 1.01' (line 304). The Vehtari et al. (2021) reference is correctly cited."
+            },
+            {
+              "text": "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)",
+              "passed": true,
+              "evidence": "The output suggests all three types of diagnostic visualizations with full code: (1) pair plots with divergences highlighted using az.plot_pair() (lines 43-58), (2) energy plots using az.plot_energy() (lines 69-72), and (3) trace plots using az.plot_trace() (lines 92-96). Additionally suggests ESS evolution plots using az.plot_ess() (lines 84-86)."
+            }
+          ]
+        },
+        {
+          "eval_name": "count-data-overdispersion",
+          "pass_rate": 1.0,
+          "passed": 9,
+          "total": 9,
+          "expectations": [
+            {
+              "text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+              "passed": true,
+              "evidence": "analysis_notes.md Section 2 is entirely dedicated to 'Likelihood Choice: Why Negative Binomial over Poisson', explicitly identifying overdispersion in the data. ticket_model.py line 130 uses pm.NegativeBinomial('tickets', mu=mu_nb, alpha=alpha, observed=y) as the primary likelihood. A Poisson model is also built for comparison, but the NegBin is the recommended model."
+            },
+            {
+              "text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+              "passed": true,
+              "evidence": "analysis_notes.md lines 15-29 provide a thorough explanation: 'the variance-to-mean ratio is well above 1 -- some days spike to 40+ tickets while the typical day sees around 8-12. This is overdispersion.' It further explains that Poisson assumes variance == mean (equidispersion), and that fitting Poisson to overdispersed data leads to 'posterior intervals that are too narrow (false precision)'. The code also prints the variance/mean ratio explicitly (line 51)."
+            },
+            {
+              "text": "Uses log-link function for count data",
+              "passed": true,
+              "evidence": "analysis_notes.md Section 3 states 'We use a log link function, which is standard for count GLMs' and provides the formula log(mu_i) = intercept + beta_dow * X_dow[i] + beta_release * X_release[i]. In ticket_model.py lines 126-127, the linear predictor is computed on the log scale and then exponentiated: log_mu_nb = intercept + ... followed by mu_nb = pm.math.exp(log_mu_nb)."
+            },
+            {
+              "text": "Sets appropriate priors for count model parameters",
+              "passed": true,
+              "evidence": "analysis_notes.md Section 4 provides detailed justification for each prior. ticket_model.py lines 115-123 set: intercept ~ Normal(2.0, 1.0) (exp(2) ~ 7.4 tickets, reasonable for 5-15 range), beta_dow ~ Normal(0, 0.5) (centered at no effect, allows ~2.7x variation at 2 sigma), beta_release ~ Normal(0, 1.0) (wider to allow large release impacts), alpha ~ HalfNormal(10) (weakly informative, respects alpha > 0 constraint). All priors are weakly informative and domain-justified."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() before inference",
+              "passed": true,
+              "evidence": "ticket_model.py lines 135-136: 'with negbin_model: prior_pred = pm.sample_prior_predictive(samples=500, random_seed=42)' is called before pm.sample() which appears at lines 164-180. The prior predictive samples are visualized in a histogram with the observed mean overlaid (lines 138-155)."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive() after inference",
+              "passed": true,
+              "evidence": "ticket_model.py lines 215-219: 'with negbin_model: ppc_negbin = pm.sample_posterior_predictive(trace_negbin, random_seed=42)' and similarly for the Poisson model. These are called after pm.sample() and used for posterior predictive check plots (az.plot_ppc) comparing both models."
+            },
+            {
+              "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+              "passed": true,
+              "evidence": "ticket_model.py line 186: az.summary(trace_negbin, var_names=['intercept', 'beta_dow', 'beta_release', 'alpha']) is called and printed. Line 198: az.plot_trace(trace_negbin, ...) generates trace plots saved to trace_plots.png. Additionally, lines 191-194 explicitly check R-hat < 1.01 and ESS > 400 programmatically."
+            },
+            {
+              "text": "Reports predictor effects with uncertainty intervals (HDI)",
+              "passed": true,
+              "evidence": "ticket_model.py lines 290-303: For each predictor (release effect and all 6 DOW effects), the code computes and prints the median and 94% HDI using az.hdi(..., hdi_prob=0.94). Example output format: 'Release multiplicative effect: Median: X.XXx, 94% HDI: [low, high]'. A forest plot with 94% HDI is also generated (lines 317-334)."
+            },
+            {
+              "text": "Interprets effects on the natural count scale (not just log scale)",
+              "passed": true,
+              "evidence": "ticket_model.py lines 290-303: Coefficients are exponentiated with np.exp() and reported as multiplicative effects (e.g., '2.7x' meaning releases roughly triple ticket counts). The notes (analysis_notes.md line 49) explain: 'exp(beta) is the factor by which the mean count changes per unit change in the predictor'. Section 7 of the notes interprets results on the count scale: 'releases roughly triple the expected ticket count'."
+            }
+          ]
+        },
+        {
+          "eval_name": "model-comparison-houses",
+          "pass_rate": 0.875,
+          "passed": 7,
+          "total": 8,
+          "expectations": [
+            {
+              "text": "Uses az.compare() or az.loo() for LOO-CV comparison",
+              "passed": true,
+              "evidence": "model_comparison.py uses both az.compare(model_dict, ic='loo', method='stacking', scale='log') in compare_loo() (line 63) and az.loo(idata, pointwise=True) in check_pareto_k() (line 108) and plot_pointwise_elpd_diff() (lines 203-204). Both functions are correctly invoked with appropriate parameters."
+            },
+            {
+              "text": "Reports ELPD values with standard errors",
+              "passed": true,
+              "evidence": "The compare_loo() function returns the az.compare() DataFrame which includes elpd_loo and se columns. The run_full_comparison() function prints this table (line 297: print(df_loo)). The comparison_notes.md reporting template (lines 153-156) includes a table with ELPD and SE columns. The decision guidance section (lines 367-370) explicitly prints ELPD difference and SE of difference values."
+            },
+            {
+              "text": "Reports ELPD difference between models with its standard error (dse)",
+              "passed": true,
+              "evidence": "run_full_comparison() explicitly extracts and prints the ELPD difference and its standard error at lines 359-370: 'elpd_diff_total = df_loo_final[\"elpd_loo\"].iloc[0] - df_loo_final[\"elpd_loo\"].iloc[1]' and 'se_diff = df_loo_final[\"dse\"].iloc[1]'. The reporting template in comparison_notes.md (line 158) also includes 'ELPD difference: [value] (SE: [value])'."
+            },
+            {
+              "text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+              "passed": true,
+              "evidence": "The run_full_comparison() function computes |diff|/SE ratio (line 365) and applies thresholds: <2 means 'NOT decisive', 2-5 means 'moderate evidence', >5 means 'strong evidence' (lines 372-387). comparison_notes.md (lines 95-98) also documents these thresholds: ratio <2, 2-5, and >5. While the thresholds used are 2x and 5x (rather than 2x and 4x), the 2x threshold is present and the spirit of magnitude-based interpretation is satisfied."
+            },
+            {
+              "text": "Checks and reports Pareto k diagnostics",
+              "passed": true,
+              "evidence": "The check_pareto_k() function (lines 91-122) computes az.loo(idata, pointwise=True), extracts pareto_k values, and categorizes them into four bins: k<0.5 (good), 0.5-0.7 (acceptable), 0.7-1.0 (problematic), k>=1.0 (very bad). run_full_comparison() calls this for both models (lines 310-315) and issues a WARNING if problematic k values are found (lines 390-398). comparison_notes.md (lines 33-41) also documents the thresholds in detail."
+            },
+            {
+              "text": "Mentions stacking weights as a complementary tool",
+              "passed": true,
+              "evidence": "compute_stacking_weights() function (lines 225-241) computes stacking weights via az.compare() with method='stacking'. run_full_comparison() calls it and prints weights (lines 349-350). comparison_notes.md (lines 72-79) explains stacking weights in detail: what they are, how to interpret them (weight ~1.0 means dominance, equal weights mean both contribute), and clarifies they are NOT posterior model probabilities but optimal predictive combination weights."
+            },
+            {
+              "text": "Suggests preferring the simpler model if models are indistinguishable",
+              "passed": false,
+              "evidence": "The output does not explicitly recommend the simpler model when models are indistinguishable. When ratio < 2, the code says 'Both models predict similarly well. Consider choosing based on interpretability or domain goals' (lines 373-377). comparison_notes.md Scenario B (lines 118-123) says to 'Choose based on your goals' and lists 'Want the simplest adequate model? Use simple.' as one option among several. However, neither output makes a clear, direct recommendation to prefer the simpler model by default when models are indistinguishable -- parsimony is mentioned only as one option alongside other considerations."
+            },
+            {
+              "text": "Provides a comparison table or structured output format",
+              "passed": true,
+              "evidence": "The compare_loo() function returns the az.compare() DataFrame which is a structured comparison table and is printed in run_full_comparison() (line 297). The comparison_notes.md includes explicit table formats: a model structure table (lines 8-10) and a reporting template with a structured LOO-CV comparison table (lines 153-156). The run_full_comparison() function also returns a structured dict with all comparison results (lines 404-414)."
+            }
+          ]
+        },
+        {
+          "eval_name": "prior-elicitation-report",
+          "pass_rate": 0.89,
+          "passed": 8,
+          "total": 9,
+          "expectations": [
+            {
+              "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+              "passed": true,
+              "evidence": "In drug_trial_model.py lines 119-148, the code explicitly states 'The blood pressure difference could be anywhere from -20 to +5 mmHg' and translates this into 'drug_effect ~ Normal(-7.5, 5)' by centering at the midpoint of that range with SD=5, giving 95% prior mass between -17.5 and +2.5 mmHg. The report (medical_board_report.md Section 3) also documents this mapping in a table."
+            },
+            {
+              "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+              "passed": true,
+              "evidence": "Prior predictive checks are prominently used. drug_trial_model.py line 210 calls pm.sample_prior_predictive() and lines 191-196 explain the rationale: 'we sample from the priors alone to see what kind of data the model expects to generate. This is a sanity check.' The report Section 5.1 describes these checks for a non-technical audience. PreliZ is not mentioned, but the assertion uses 'or' and prior predictive checks are clearly present."
+            },
+            {
+              "text": "Calls pm.sample_prior_predictive() to check priors",
+              "passed": true,
+              "evidence": "Line 210 of drug_trial_model.py: 'prior_pred = pm.sample_prior_predictive(samples=500, random_seed=RANDOM_SEED)'. The results are then inspected (lines 212-218) and visualized with a histogram (lines 221-236), saved as prior_predictive_check.png."
+            },
+            {
+              "text": "Documents prior justifications in the code or notes",
+              "passed": true,
+              "evidence": "Extensive prior justifications in drug_trial_model.py lines 117-148: each parameter (mu_control, drug_effect, sigma) has a multi-line comment explaining the choice, domain grounding, and implied 95% intervals. Lines 144-148 explicitly argue against flat priors. The report Section 3 provides an additional justification table mapping each prior to its rationale."
+            },
+            {
+              "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+              "passed": true,
+              "evidence": "Both are used. Line 292: 'az.summary(trace, var_names=[...], round_to=2)'. Line 314: 'az.plot_trace(trace, var_names=[...])'. Additionally, az.rhat() (line 297) and az.ess() (line 305) are computed with explicit threshold checks (R-hat < 1.01, ESS > 400) and printed status indicators."
+            },
+            {
+              "text": "Calls pm.sample_posterior_predictive()",
+              "passed": true,
+              "evidence": "Line 286 of drug_trial_model.py: 'posterior_pred = pm.sample_posterior_predictive(trace, random_seed=RANDOM_SEED)'. Results are visualized in lines 380-409 comparing observed vs. predicted distributions for both treatment and control groups."
+            },
+            {
+              "text": "Generates a structured report suitable for a non-technical audience",
+              "passed": true,
+              "evidence": "medical_board_report.md is a 192-line structured report with: Executive Summary, Study Design table, 'Why Bayesian Analysis?' section, plain-language interpretation ('What does this mean in plain language?'), clinical significance context, model validation summary, sensitivity analysis, limitations, conclusions with actionable recommendations, and a Glossary of Terms appendix. Explicitly addressed to 'Medical Board Review'."
+            },
+            {
+              "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+              "passed": false,
+              "evidence": "The primary analysis uses Bayesian terminology throughout: 'credible interval', '94% HDI', 'posterior mean', 'probability of ANY BP reduction > 99%'. However, the report includes a Section 7 'Comparison with Traditional (Frequentist) Analysis' that explicitly states 'p-value < 0.001' and '95% Confidence interval'. Section 2 also mentions 'p-value' and 'significant'. While these appear in comparative/educational contexts rather than as the primary inferential framework, the assertion requires not using frequentist language, and it is present in the document."
+            },
+            {
+              "text": "Explains concepts in an accessible way for a Bayesian beginner",
+              "passed": true,
+              "evidence": "The report includes: a 'What does this mean in plain language?' subsection (Section 4.1), a full Glossary of Terms appendix defining 9 technical terms in beginner-friendly language, a 'Why Bayesian Analysis?' section (Section 2) with four bullet points explaining the approach's benefits, and plain-English summary of diagnostics (Section 5.2). The code comments also explain concepts like prior predictive checks in accessible terms."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "skill_name": "bayesian-workflow",
+    "timestamp": "2026-03-02T12:52:51.633554",
+    "evals_run": [
+      "logistic-regression-churn",
+      "hierarchical-schools",
+      "troubleshooting-divergences",
+      "count-data-overdispersion",
+      "model-comparison-houses",
+      "prior-elicitation-report"
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "logistic-regression-churn",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.93,
+        "passed": 14,
+        "failed": 1,
+        "total": 15,
+        "time_seconds": null,
+        "tokens": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+          "passed": true,
+          "evidence": "Line 145: pm.Bernoulli('churn_obs', logit_p=mu, observed=y_data, dims='obs_id') \u2014 uses pm.Bernoulli with logit_p parameterization (logit inverse-link)."
+        },
+        {
+          "text": "Standardizes or scales predictors before fitting the model",
+          "passed": true,
+          "evidence": "Lines 96-107: Predictors are explicitly standardized to zero mean and unit variance (df_z DataFrame with age_z, tenure_z, spend_z, tickets_z). Means and SDs are stored for back-transformation."
+        },
+        {
+          "text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+          "passed": true,
+          "evidence": "Line 136: beta = pm.Normal('beta', mu=0, sigma=1.5, dims='predictor') \u2014 sigma=1.5 is within the [1, 5] range. Line 129: alpha = pm.Normal('alpha', mu=0, sigma=1.5) also uses sigma=1.5. Both include justification comments."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() before inference",
+          "passed": true,
+          "evidence": "Line 159: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called before pm.sample() on line 209."
+        },
+        {
+          "text": "Calls pm.sample() for MCMC inference without hardcoding chains (no chains=4 or similar)",
+          "passed": true,
+          "evidence": "Line 209: idata = pm.sample(nuts_sampler='nutpie', random_seed=rng) \u2014 no chains argument is passed. Comment on line 208 explicitly says 'Don't hardcode number of chains'."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive() after inference",
+          "passed": true,
+          "evidence": "Line 271: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after pm.sample()."
+        },
+        {
+          "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+          "passed": true,
+          "evidence": "Line 220: summary = az.summary(idata, round_to=3). Line 252: axes_trace = az.plot_trace(idata, kind='rank_vlines'). Both are used."
+        },
+        {
+          "text": "Reports 94% HDI (not 95% CI) for parameter estimates",
+          "passed": true,
+          "evidence": "Line 364: az.plot_forest(..., hdi_prob=0.94). Line 375: az.plot_posterior(..., hdi_prob=0.94). Line 418: '94% HDI' column header. Line 436: label='94% HDI'. Results consistently use 94% HDI throughout."
+        },
+        {
+          "text": "Uses coords and dims in the PyMC model definition",
+          "passed": true,
+          "evidence": "Lines 113-116: coords = {'predictor': predictor_names, 'obs_id': np.arange(N)}. Line 120: pm.Model(coords=coords). Lines 122-123: dims=('obs_id', 'predictor') and dims='obs_id'. Line 136: dims='predictor'."
+        },
+        {
+          "text": "Documents prior choices with justification comments in the code",
+          "passed": true,
+          "evidence": "Lines 126-135: Detailed comments explaining intercept prior (Normal(0, 1.5) covers base rates 5%-80% churn) and coefficient priors (sigma=1.5 allows 1-SD change to shift log-odds by +/-3, mapping probability from ~5% to ~95%)."
+        },
+        {
+          "text": "Uses a descriptive random seed (sum(map(ord, ...)) pattern or similar), not a magic number like 42",
+          "passed": true,
+          "evidence": "Line 47: RANDOM_SEED = sum(map(ord, 'churn-logistic-v1')) \u2014 uses the sum(map(ord, ...)) pattern with a descriptive analysis name."
+        },
+        {
+          "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar), not custom plotting code",
+          "passed": true,
+          "evidence": "Line 301: azp.plot_ppc_pit(idata) \u2014 uses arviz_plots' plot_ppc_pit function. Line 311: azp.plot_ppc_pit(idata, loo_pit=True) \u2014 also runs LOO-PIT calibration."
+        },
+        {
+          "text": "Saves InferenceData to disk (idata.to_netcdf or similar) after sampling",
+          "passed": true,
+          "evidence": "Line 275: idata.to_netcdf('churn_model_output.nc') \u2014 saves after posterior predictive sampling is complete."
+        },
+        {
+          "text": "Uses xarray operations (.sel, .mean(dim=...), etc.) over numpy for InferenceData manipulation",
+          "passed": true,
+          "evidence": "Lines 162-167: prior_churn_rates.mean(), .std(), .quantile() on xarray DataArray. Lines 285-290: idata.posterior_predictive['churn_obs'].mean(dim='obs_id'), .quantile(). Lines 399-414: xr.DataArray, xr.dot, .mean(dim=['chain', 'draw']), .quantile(dim=['chain', 'draw'])."
+        },
+        {
+          "text": "Generates a companion analysis notes file (markdown) interpreting the results",
+          "passed": false,
+          "evidence": "File not generated (subagent permission issue)"
+        }
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "logistic-regression-churn",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 216.2,
+        "tokens": 22199,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Uses Bernoulli likelihood (pm.Bernoulli) with logit inverse-link function",
+          "passed": true,
+          "evidence": "churn_model.py line 200: pm.Bernoulli('churn', logit_p=logit_p, observed=y_data) -- uses Bernoulli with logit_p parameter (logit inverse-link)."
+        },
+        {
+          "text": "Standardizes or scales predictors before fitting the model",
+          "passed": true,
+          "evidence": "churn_model.py lines 119-121: StandardScaler().fit_transform(X_train) applied before modeling. Also documented in analysis_notes.md Section 3."
+        },
+        {
+          "text": "Sets weakly informative priors on regression coefficients (Normal with sigma between 1 and 5)",
+          "passed": true,
+          "evidence": "churn_model.py line 194: pm.Normal('betas', mu=0, sigma=1, shape=X_train.shape[1]) -- sigma=1 is within [1, 5]. Intercept has sigma=1.5 (line 193)."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() before inference",
+          "passed": true,
+          "evidence": "churn_model.py lines 559-561: pm.sample_prior_predictive(samples=1000, ...) called in prior_predictive_check(). In main(), prior_predictive_check is called at line 679 before fit_model at line 688."
+        },
+        {
+          "text": "Calls pm.sample() for MCMC inference",
+          "passed": true,
+          "evidence": "churn_model.py lines 218-226: pm.sample(draws=2000, tune=1000, chains=4, ...) called inside fit_model()."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive() after inference",
+          "passed": true,
+          "evidence": "churn_model.py lines 355-360: pm.sample_posterior_predictive(idata, ...) called in posterior_predictions(), which runs after fit_model in main() (line 698)."
+        },
+        {
+          "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+          "passed": true,
+          "evidence": "churn_model.py line 248: az.summary(idata, var_names=['intercept', 'betas'], hdi_prob=0.94). Also line 297: az.plot_trace(idata, ...). Both used in diagnostics functions."
+        },
+        {
+          "text": "Reports 94% HDI (not 95% CI) for parameter estimates",
+          "passed": true,
+          "evidence": "churn_model.py line 249: az.summary(..., hdi_prob=0.94). Also lines 304, 313, 495, 507 all use hdi_prob=0.94. analysis_notes.md Section 8 explicitly explains the 94% HDI preference."
+        },
+        {
+          "text": "Uses coords and dims in the PyMC model definition",
+          "passed": false,
+          "evidence": "churn_model.py build_model() (lines 187-202) does not use coords or dims. Parameters are defined with shape=X_train.shape[1] instead of named dims. No coords dict is passed to pm.Model()."
+        },
+        {
+          "text": "Documents prior choices with justification comments in the code",
+          "passed": true,
+          "evidence": "churn_model.py lines 166-185: detailed docstring in build_model() explaining intercept Normal(0,1.5) and betas Normal(0,1) choices with logit-scale reasoning and Gelman et al. (2008) reference. Also in analysis_notes.md Section 4."
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "hierarchical-schools",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.91,
+        "passed": 10,
+        "failed": 1,
+        "total": 11,
+        "time_seconds": null,
+        "tokens": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+          "passed": true,
+          "evidence": "Lines 127-157: Model has population-level hyperpriors (mu_global, sigma_between), school-level parameters (mu_school via school_offset), and student-level likelihood (Normal with sigma_within). Students nested within schools."
+        },
+        {
+          "text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+          "passed": true,
+          "evidence": "Lines 144-149: school_offset = pm.Normal('school_offset', mu=0, sigma=1, dims='school') followed by mu_school = pm.Deterministic('mu_school', mu_global + school_offset * sigma_between, dims='school'). Classic non-centered parameterization."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() before inference",
+          "passed": true,
+          "evidence": "Line 162: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called within the model context before pm.sample() on line 193."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive() after inference",
+          "passed": true,
+          "evidence": "Line 197: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after pm.sample()."
+        },
+        {
+          "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+          "passed": true,
+          "evidence": "Line 218: summary = az.summary(idata, round_to=3). Line 237: az.plot_trace(idata, var_names=[...], kind='rank_vlines'). Both used."
+        },
+        {
+          "text": "Includes shrinkage analysis showing small schools pulled toward grand mean",
+          "passed": true,
+          "evidence": "Lines 377-417: Full shrinkage plot comparing observed (no-pooling) school means vs posterior (partial-pooling) means. Points sized by number of students (s=sizes*5). Annotations show n=X for each school. Red dashed line for no pooling, gray line for complete pooling (grand mean). Title: 'Shrinkage Plot: Partial Pooling Toward Grand Mean'."
+        },
+        {
+          "text": "Computes ICC (intraclass correlation) or variance partition coefficient",
+          "passed": true,
+          "evidence": "Lines 419-450: ICC computed as sigma_between^2 / (sigma_between^2 + sigma_within^2) using posterior draws. Reports mean and 94% HDI. Prints interpretation: '~X% of the total variance in test scores is attributable to differences between schools'. Also plots the ICC posterior distribution."
+        },
+        {
+          "text": "Uses coords and dims in the PyMC model definition",
+          "passed": true,
+          "evidence": "Lines 122-125: coords = {'school': school_names, 'obs': np.arange(len(df))}. Line 127: pm.Model(coords=coords). Lines 129-157: dims='obs', dims='school' used throughout."
+        },
+        {
+          "text": "Reports credible intervals (94% HDI preferred) for school-level estimates",
+          "passed": true,
+          "evidence": "Line 425: icc_hdi = az.hdi(icc_draws, hdi_prob=0.94). Line 454: az.plot_forest(idata, var_names=['mu_school'], combined=True) which defaults to 94% HDI. Line 455: Title 'School-Level Mean Estimates (94% HDI)'. Line 485: az.summary for school-level estimates (defaults to 94% HDI)."
+        },
+        {
+          "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)",
+          "passed": true,
+          "evidence": "Lines 322-367: Uses azp.plot_ppc_pit(idata) for PPC-PIT calibration, and azp.plot_ppc_pit(idata, loo_pit=True) for LOO-PIT. Falls back to az.plot_loo_pit if arviz_plots is unavailable."
+        },
+        {
+          "text": "Generates a companion analysis notes file (markdown) interpreting the results and diagnostics",
+          "passed": false,
+          "evidence": "File not generated (subagent permission issue)"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "hierarchical-schools",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.89,
+        "passed": 8,
+        "failed": 1,
+        "total": 9,
+        "time_seconds": 166.4,
+        "tokens": 19638,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+          "passed": true,
+          "evidence": "The model in school_model.py (lines 207-249) defines a full hierarchical model with hyperpriors mu_global, sigma_between (school-level variance), sigma_within (student-level variance), and school-level means mu_school derived via school_offset. The likelihood y_obs ~ Normal(mu_school[school_id], sigma_within) links student scores to school-level parameters."
+        },
+        {
+          "text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+          "passed": true,
+          "evidence": "Lines 223-224 of school_model.py: 'school_offset = pm.Normal(\"school_offset\", mu=0, sigma=1, shape=N_SCHOOLS)' followed by 'mu_school = pm.Deterministic(\"mu_school\", mu_global + sigma_between * school_offset)'. This is the standard non-centered parameterization. The analysis_notes.md also explains the rationale for avoiding the funnel geometry."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() before inference",
+          "passed": true,
+          "evidence": "Line 172 of school_model.py: 'prior_pred = pm.sample_prior_predictive(samples=500, random_seed=RANDOM_SEED)' is called within the prior_model context before the main hierarchical_model sampling. Prior predictive distributions are visualized in lines 175-200."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive() after inference",
+          "passed": true,
+          "evidence": "Line 252 of school_model.py: 'post_pred = pm.sample_posterior_predictive(trace, random_seed=RANDOM_SEED)' is called after pm.sample() completes. The results are used for posterior predictive checks in lines 354-423."
+        },
+        {
+          "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+          "passed": true,
+          "evidence": "Both are used. Line 264: 'summary = az.summary(trace, var_names=[\"mu_global\", \"sigma_between\", \"sigma_within\", \"icc\", \"mu_school\"], round_to=2)'. Line 306: 'az.plot_trace(trace, var_names=[\"mu_global\", \"sigma_between\", \"sigma_within\", \"icc\"], figsize=(14, 10))'. Additionally, az.rhat(), az.ess(), az.plot_rank(), and az.plot_energy() are used for comprehensive diagnostics."
+        },
+        {
+          "text": "Includes shrinkage analysis showing small schools pulled toward grand mean",
+          "passed": true,
+          "evidence": "Lines 452-473 of school_model.py compute and print a detailed shrinkage table for each school showing observed mean, posterior mean, shrinkage percentage, and true mean, with small schools (n=5) showing the most shrinkage. Lines 480-528 produce a shrinkage visualization with arrows from observed to posterior means. The analysis_notes.md (lines 125-135) explicitly states 'Small schools (n=5) are shrunk the most toward the grand mean'."
+        },
+        {
+          "text": "Computes ICC (intraclass correlation) or variance partition coefficient",
+          "passed": true,
+          "evidence": "Line 229-231 of school_model.py: 'icc = pm.Deterministic(\"icc\", sigma_between**2 / (sigma_between**2 + sigma_within**2))' computes ICC as a derived quantity within the model. Lines 437-449 report ICC posterior statistics with 94% HDI. Lines 535-554 visualize the ICC posterior distribution with az.plot_posterior(). The analysis_notes.md provides detailed interpretation of ICC values."
+        },
+        {
+          "text": "Uses coords and dims in the PyMC model definition",
+          "passed": false,
+          "evidence": "Neither the prior_model (lines 153-168) nor the hierarchical_model (lines 207-249) use coords or dims arguments. Instead, the model uses 'shape=N_SCHOOLS' for the school_offset parameter and raw integer indexing 'data[\"school_id\"].values' for the likelihood. Modern PyMC best practice is to define coords={'school': school_names} and use dims='school' for labeled dimensions."
+        },
+        {
+          "text": "Reports credible intervals (94% HDI preferred) for school-level estimates",
+          "passed": true,
+          "evidence": "Line 369: 'posterior_hdi = az.hdi(trace, var_names=[\"mu_school\"])[\"mu_school\"].values' computes HDI for school means. Line 383 labels these as '94% HDI'. Lines 561-568 create a forest plot with 'hdi_prob=0.94'. Line 542 uses 'hdi_prob=0.94' for the ICC posterior plot. The variance decomposition section (lines 440-445) also reports 94% HDI intervals for sigma_between, sigma_within, and ICC."
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "troubleshooting-divergences",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": null,
+        "tokens": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Explicitly states that results are unreliable and should NOT be interpreted",
+          "passed": true,
+          "evidence": "Executive summary states: 'Results from this model are unreliable and must not be interpreted until these issues are resolved.' Section 7 reiterates: 'Do not ignore the divergences and interpret results anyway.' Section 5 says: 'Do not interpret results until every check passes.'"
+        },
+        {
+          "text": "Identifies all three symptoms: divergences, high R-hat, stuck chain",
+          "passed": true,
+          "evidence": "Section 1.1 table explicitly lists all three: '47 divergences (out of 4000 draws)', 'R-hat = 1.03 on two parameters', and 'One chain stuck'. Each is described with meaning and severity."
+        },
+        {
+          "text": "Suggests non-centered reparameterization as a fix",
+          "passed": true,
+          "evidence": "Fix 1 (lines 135-183): Full non-centered reparameterization example with before/after code. Explains why it works: 'The non-centered version draws mu_raw from a fixed standard normal -- no dependence on sigma_group during sampling.'"
+        },
+        {
+          "text": "Suggests increasing target_accept (to 0.95 or higher)",
+          "passed": true,
+          "evidence": "Fix 0 (lines 110-133): 'target_accept=0.95, # default is ~0.8; try 0.95 first, then 0.99'. Code example shows pm.sample(..., target_accept=0.95, ...)."
+        },
+        {
+          "text": "Suggests checking for multimodality",
+          "passed": true,
+          "evidence": "Fix 4 (lines 249-278): 'Check for multimodality'. Provides code to compare per-chain means and detect if the stuck chain is in a different mode. Suggests identifiability checks, sum-to-zero constraints, and more tuning steps."
+        },
+        {
+          "text": "Provides concrete Python/PyMC code examples for at least two fixes",
+          "passed": true,
+          "evidence": "Fix 0 has code (lines 115-129). Fix 1 has before/after code (lines 141-178). Fix 2 has code (lines 189-203). Fix 3 has code (lines 215-245). Fix 4 has code (lines 253-278). Well over two fixes with concrete Python/PyMC code."
+        },
+        {
+          "text": "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)",
+          "passed": true,
+          "evidence": "Section 1.1 table: 'The threshold is R-hat <= 1.01; yours exceeds it.' Section 5 verification: 'R-hat: ALL parameters must be <= 1.01'. Appendix table: 'Healthy: <= 1.01'. The correct modern threshold of 1.01 is used throughout, never the outdated 1.1."
+        },
+        {
+          "text": "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)",
+          "passed": true,
+          "evidence": "Section 2.2: az.plot_trace(idata, kind='rank_vlines') and az.plot_pair(idata, ..., divergences=True). Section 2.3: az.plot_energy(idata). All three major diagnostic visualizations are suggested with code examples and interpretation guidance."
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "troubleshooting-divergences",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 85.4,
+        "tokens": 13785,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Explicitly states that results are unreliable and should NOT be interpreted",
+          "passed": false,
+          "evidence": "The output says 'the resulting samples do not faithfully represent the posterior distribution' and 'entire regions of the posterior are being systematically missed,' which implies unreliability. However, it never explicitly states that the current results should NOT be interpreted or used for inference. The document focuses on diagnosis and fixes rather than issuing a direct warning against interpreting the results."
+        },
+        {
+          "text": "Identifies all three symptoms: divergences, high R-hat, stuck chain",
+          "passed": true,
+          "evidence": "All three symptoms are clearly identified in the summary table (lines 5-9): 'Divergences: 47 / 4000 samples' marked PROBLEMATIC, 'R-hat: 1.03 (two parameters)' marked PROBLEMATIC, and 'Trace plots: One chain stuck' marked PROBLEMATIC. Each symptom is then discussed in dedicated subsections (1.1 'What divergences mean', 1.2 'What elevated R-hat means', 1.3 'What a stuck chain means')."
+        },
+        {
+          "text": "Suggests non-centered reparameterization as a fix",
+          "passed": true,
+          "evidence": "Fix 1 (lines 104-143) is entirely dedicated to non-centered reparameterization, described as 'the single most effective fix for divergences in hierarchical models.' It provides both the problematic centered parameterization and the corrected non-centered version with full PyMC code, along with a clear explanation of why it works (breaking the funnel dependency)."
+        },
+        {
+          "text": "Suggests increasing target_accept (to 0.95 or higher)",
+          "passed": true,
+          "evidence": "Fix 2 (lines 145-162) explicitly recommends increasing target_accept, with code showing 'target_accept=0.95' and guidelines suggesting to 'Start with 0.90, then try 0.95, then 0.99 if needed.' The fix is appropriately labeled as a 'palliative measure, not a cure.'"
+        },
+        {
+          "text": "Suggests checking for multimodality",
+          "passed": true,
+          "evidence": "Line 28 explicitly mentions multimodality as a potential cause of a stuck chain: 'It has become trapped in a local mode of a multimodal posterior.' While the document does not suggest a dedicated multimodality diagnostic procedure, it identifies multimodality as a possible root cause of the observed symptoms."
+        },
+        {
+          "text": "Provides concrete Python/PyMC code examples for at least two fixes",
+          "passed": true,
+          "evidence": "The output provides extensive Python/PyMC code examples for multiple fixes: (1) non-centered reparameterization with full centered vs. non-centered model code (lines 112-141), (2) increasing target_accept with pm.sample() code (lines 149-157), (3) informative priors with code examples (lines 169-176), (4) increasing tuning samples with code (lines 196-204), (5) mass matrix estimation with code (lines 212-219), (6) adding chains with code (lines 232-241), and (7) handling correlations with code (lines 248-266). Well exceeds the 'at least two' requirement."
+        },
+        {
+          "text": "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)",
+          "passed": true,
+          "evidence": "The correct modern threshold of 1.01 is explicitly mentioned in multiple places: the summary table shows 'Acceptable Threshold: < 1.01' (line 8), section 1.2 states 'An R-hat of 1.03 on two parameters exceeds the modern recommended threshold of 1.01 (Vehtari et al., 2021)' (line 23), and the convergence targets section states 'All R-hat values < 1.01' (line 304). The Vehtari et al. (2021) reference is correctly cited."
+        },
+        {
+          "text": "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)",
+          "passed": true,
+          "evidence": "The output suggests all three types of diagnostic visualizations with full code: (1) pair plots with divergences highlighted using az.plot_pair() (lines 43-58), (2) energy plots using az.plot_energy() (lines 69-72), and (3) trace plots using az.plot_trace() (lines 92-96). Additionally suggests ESS evolution plots using az.plot_ess() (lines 84-86)."
+        }
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "count-data-overdispersion",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.91,
+        "passed": 10,
+        "failed": 1,
+        "total": 11,
+        "time_seconds": null,
+        "tokens": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+          "passed": true,
+          "evidence": "Line 130: pm.NegativeBinomial('tickets', mu=pm.math.exp(log_mu), alpha=alpha, ...). Lines 84-86 compute and print variance/mean ratio confirming overdispersion. A Poisson model is also fit (line 361) but explicitly as a baseline for comparison."
+        },
+        {
+          "text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+          "passed": true,
+          "evidence": "Lines 4-6: 'The variance appears larger than the mean, suggesting overdispersion. We model ticket counts using a Negative Binomial likelihood (which naturally handles overdispersion).' Lines 85-86: prints 'Variance / Mean: ... (>>1 = overdispersed)'. Lines 128-129: 'NegativeBinomial parameterized by mu and alpha: Var(Y) = mu + mu^2 / alpha'."
+        },
+        {
+          "text": "Uses log-link function for count data",
+          "passed": true,
+          "evidence": "Line 125: log_mu = intercept + dow_effect[dow_idx] + release_effect * release. Line 132: mu=pm.math.exp(log_mu) \u2014 linear predictor is on the log scale, exponentiated for the likelihood. This is the canonical log-link for count data."
+        },
+        {
+          "text": "Sets appropriate priors for count model parameters",
+          "passed": true,
+          "evidence": "Line 108: intercept ~ Normal(log(10), 1.0) \u2014 centered on log of expected baseline count. Line 113: dow_effect ~ ZeroSumNormal(sigma=0.5). Line 118: release_effect ~ Normal(0.5, 0.5). Line 122: alpha ~ Gamma(2, 0.5). All priors have justification comments explaining the parameter choices."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() before inference",
+          "passed": true,
+          "evidence": "Line 140: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called before pm.sample() on line 170."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive() after inference",
+          "passed": true,
+          "evidence": "Line 178: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after pm.sample()."
+        },
+        {
+          "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+          "passed": true,
+          "evidence": "Line 192: summary = az.summary(idata, round_to=3). Line 207: az.plot_trace(idata, kind='rank_vlines'). Both used."
+        },
+        {
+          "text": "Reports predictor effects with uncertainty intervals (HDI)",
+          "passed": true,
+          "evidence": "Line 433: summary_94 = az.summary(idata, hdi_prob=0.94, round_to=3) \u2014 reports all parameters with 94% HDI. Lines 440-444: Release effect with 94% HDI on both log and rate scales. Lines 448-453: Day-of-week effects each with 94% HDI."
+        },
+        {
+          "text": "Interprets effects on the natural count scale (not just log scale)",
+          "passed": true,
+          "evidence": "Lines 437-444: release_multiplier = np.exp(release_samples) \u2014 converts to rate multiplier. Prints 'Release multiplier (rate scale): mean = X.XXx, 94% HDI = [X.XXx, X.XXx]'. Line 461-462: Also interprets Var/Mean ratio on the natural scale."
+        },
+        {
+          "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)",
+          "passed": true,
+          "evidence": "Lines 274-302: Uses azp.plot_ppc_pit(idata) for PPC-PIT calibration. Falls back to az.plot_loo_pit if needed."
+        },
+        {
+          "text": "Generates a companion analysis notes file (markdown) interpreting the results",
+          "passed": false,
+          "evidence": "File not generated (subagent permission issue)"
+        }
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "count-data-overdispersion",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 120.8,
+        "tokens": 16563,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Recognizes overdispersion and selects NegativeBinomial (not just Poisson) as the likelihood",
+          "passed": true,
+          "evidence": "analysis_notes.md Section 2 is entirely dedicated to 'Likelihood Choice: Why Negative Binomial over Poisson', explicitly identifying overdispersion in the data. ticket_model.py line 130 uses pm.NegativeBinomial('tickets', mu=mu_nb, alpha=alpha, observed=y) as the primary likelihood. A Poisson model is also built for comparison, but the NegBin is the recommended model."
+        },
+        {
+          "text": "Explains WHY NegBinomial is preferred over Poisson (overdispersion / variance > mean)",
+          "passed": true,
+          "evidence": "analysis_notes.md lines 15-29 provide a thorough explanation: 'the variance-to-mean ratio is well above 1 -- some days spike to 40+ tickets while the typical day sees around 8-12. This is overdispersion.' It further explains that Poisson assumes variance == mean (equidispersion), and that fitting Poisson to overdispersed data leads to 'posterior intervals that are too narrow (false precision)'. The code also prints the variance/mean ratio explicitly (line 51)."
+        },
+        {
+          "text": "Uses log-link function for count data",
+          "passed": true,
+          "evidence": "analysis_notes.md Section 3 states 'We use a log link function, which is standard for count GLMs' and provides the formula log(mu_i) = intercept + beta_dow * X_dow[i] + beta_release * X_release[i]. In ticket_model.py lines 126-127, the linear predictor is computed on the log scale and then exponentiated: log_mu_nb = intercept + ... followed by mu_nb = pm.math.exp(log_mu_nb)."
+        },
+        {
+          "text": "Sets appropriate priors for count model parameters",
+          "passed": true,
+          "evidence": "analysis_notes.md Section 4 provides detailed justification for each prior. ticket_model.py lines 115-123 set: intercept ~ Normal(2.0, 1.0) (exp(2) ~ 7.4 tickets, reasonable for 5-15 range), beta_dow ~ Normal(0, 0.5) (centered at no effect, allows ~2.7x variation at 2 sigma), beta_release ~ Normal(0, 1.0) (wider to allow large release impacts), alpha ~ HalfNormal(10) (weakly informative, respects alpha > 0 constraint). All priors are weakly informative and domain-justified."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() before inference",
+          "passed": true,
+          "evidence": "ticket_model.py lines 135-136: 'with negbin_model: prior_pred = pm.sample_prior_predictive(samples=500, random_seed=42)' is called before pm.sample() which appears at lines 164-180. The prior predictive samples are visualized in a histogram with the observed mean overlaid (lines 138-155)."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive() after inference",
+          "passed": true,
+          "evidence": "ticket_model.py lines 215-219: 'with negbin_model: ppc_negbin = pm.sample_posterior_predictive(trace_negbin, random_seed=42)' and similarly for the Poisson model. These are called after pm.sample() and used for posterior predictive check plots (az.plot_ppc) comparing both models."
+        },
+        {
+          "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+          "passed": true,
+          "evidence": "ticket_model.py line 186: az.summary(trace_negbin, var_names=['intercept', 'beta_dow', 'beta_release', 'alpha']) is called and printed. Line 198: az.plot_trace(trace_negbin, ...) generates trace plots saved to trace_plots.png. Additionally, lines 191-194 explicitly check R-hat < 1.01 and ESS > 400 programmatically."
+        },
+        {
+          "text": "Reports predictor effects with uncertainty intervals (HDI)",
+          "passed": true,
+          "evidence": "ticket_model.py lines 290-303: For each predictor (release effect and all 6 DOW effects), the code computes and prints the median and 94% HDI using az.hdi(..., hdi_prob=0.94). Example output format: 'Release multiplicative effect: Median: X.XXx, 94% HDI: [low, high]'. A forest plot with 94% HDI is also generated (lines 317-334)."
+        },
+        {
+          "text": "Interprets effects on the natural count scale (not just log scale)",
+          "passed": true,
+          "evidence": "ticket_model.py lines 290-303: Coefficients are exponentiated with np.exp() and reported as multiplicative effects (e.g., '2.7x' meaning releases roughly triple ticket counts). The notes (analysis_notes.md line 49) explain: 'exp(beta) is the factor by which the mean count changes per unit change in the predictor'. Section 7 of the notes interprets results on the count scale: 'releases roughly triple the expected ticket count'."
+        }
+      ]
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "model-comparison-houses",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": null,
+        "tokens": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Uses az.compare() or az.loo() for LOO-CV comparison",
+          "passed": true,
+          "evidence": "Line 310-311: loo_m1 = az.loo(idata_m1, pointwise=True) and loo_m2 = az.loo(idata_m2, pointwise=True) for individual model LOO. Line 349: comparison = az.compare(models) for head-to-head comparison."
+        },
+        {
+          "text": "Reports ELPD values with standard errors",
+          "passed": true,
+          "evidence": "Lines 466-475: Prints elpd_loo and se for both models from the comparison table. Lines 313-317: Prints full loo objects which include elpd_loo and SE."
+        },
+        {
+          "text": "Reports ELPD difference between models with its standard error (dse)",
+          "passed": true,
+          "evidence": "Lines 368-369: elpd_diff = comparison.loc[second_model, 'elpd_diff'] and dse = comparison.loc[second_model, 'dse']. Lines 374-376: Prints 'ELPD difference: X.XX' and 'SE of difference: X.XX'."
+        },
+        {
+          "text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+          "passed": true,
+          "evidence": "Lines 371-384: ratio = abs(elpd_diff) / dse. If ratio < 2: 'weak (models practically indistinguishable)'. If ratio < 4: 'moderate (consider domain knowledge)'. If ratio >= 4: 'strong (clear preference for best model)'. Uses 2x and 4x dse thresholds."
+        },
+        {
+          "text": "Checks and reports Pareto k diagnostics",
+          "passed": true,
+          "evidence": "Lines 320-327: Computes pareto_k for both models, identifies observations with k > 0.7, prints them. Lines 330-337: Plots Pareto k hat for both models side by side."
+        },
+        {
+          "text": "Mentions stacking weights as a complementary tool",
+          "passed": true,
+          "evidence": "Lines 386-388: Section titled '--- Stacking weights ---' that prints comparison[['weight']]. Line 348 notes 'az.compare uses stacking weights by default'."
+        },
+        {
+          "text": "Suggests preferring the simpler model if models are indistinguishable",
+          "passed": true,
+          "evidence": "Line 379: When ratio < 2, evidence is 'weak (models practically indistinguishable -- prefer simpler)'. Explicitly recommends preferring the simpler model."
+        },
+        {
+          "text": "Provides a comparison table or structured output format",
+          "passed": true,
+          "evidence": "Line 351: print(comparison) \u2014 prints the full az.compare comparison table. Lines 462-481: Final summary section with structured printout of ELPD_LOO, SE, Weight, and Warning for each model."
+        }
+      ]
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "model-comparison-houses",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 142.9,
+        "tokens": 17999,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Uses az.compare() or az.loo() for LOO-CV comparison",
+          "passed": true,
+          "evidence": "model_comparison.py uses both az.compare(model_dict, ic='loo', method='stacking', scale='log') in compare_loo() (line 63) and az.loo(idata, pointwise=True) in check_pareto_k() (line 108) and plot_pointwise_elpd_diff() (lines 203-204). Both functions are correctly invoked with appropriate parameters."
+        },
+        {
+          "text": "Reports ELPD values with standard errors",
+          "passed": true,
+          "evidence": "The compare_loo() function returns the az.compare() DataFrame which includes elpd_loo and se columns. The run_full_comparison() function prints this table (line 297: print(df_loo)). The comparison_notes.md reporting template (lines 153-156) includes a table with ELPD and SE columns. The decision guidance section (lines 367-370) explicitly prints ELPD difference and SE of difference values."
+        },
+        {
+          "text": "Reports ELPD difference between models with its standard error (dse)",
+          "passed": true,
+          "evidence": "run_full_comparison() explicitly extracts and prints the ELPD difference and its standard error at lines 359-370: 'elpd_diff_total = df_loo_final[\"elpd_loo\"].iloc[0] - df_loo_final[\"elpd_loo\"].iloc[1]' and 'se_diff = df_loo_final[\"dse\"].iloc[1]'. The reporting template in comparison_notes.md (line 158) also includes 'ELPD difference: [value] (SE: [value])'."
+        },
+        {
+          "text": "Interprets ELPD difference using magnitude thresholds (2x or 4x dse)",
+          "passed": true,
+          "evidence": "The run_full_comparison() function computes |diff|/SE ratio (line 365) and applies thresholds: <2 means 'NOT decisive', 2-5 means 'moderate evidence', >5 means 'strong evidence' (lines 372-387). comparison_notes.md (lines 95-98) also documents these thresholds: ratio <2, 2-5, and >5. While the thresholds used are 2x and 5x (rather than 2x and 4x), the 2x threshold is present and the spirit of magnitude-based interpretation is satisfied."
+        },
+        {
+          "text": "Checks and reports Pareto k diagnostics",
+          "passed": true,
+          "evidence": "The check_pareto_k() function (lines 91-122) computes az.loo(idata, pointwise=True), extracts pareto_k values, and categorizes them into four bins: k<0.5 (good), 0.5-0.7 (acceptable), 0.7-1.0 (problematic), k>=1.0 (very bad). run_full_comparison() calls this for both models (lines 310-315) and issues a WARNING if problematic k values are found (lines 390-398). comparison_notes.md (lines 33-41) also documents the thresholds in detail."
+        },
+        {
+          "text": "Mentions stacking weights as a complementary tool",
+          "passed": true,
+          "evidence": "compute_stacking_weights() function (lines 225-241) computes stacking weights via az.compare() with method='stacking'. run_full_comparison() calls it and prints weights (lines 349-350). comparison_notes.md (lines 72-79) explains stacking weights in detail: what they are, how to interpret them (weight ~1.0 means dominance, equal weights mean both contribute), and clarifies they are NOT posterior model probabilities but optimal predictive combination weights."
+        },
+        {
+          "text": "Suggests preferring the simpler model if models are indistinguishable",
+          "passed": false,
+          "evidence": "The output does not explicitly recommend the simpler model when models are indistinguishable. When ratio < 2, the code says 'Both models predict similarly well. Consider choosing based on interpretability or domain goals' (lines 373-377). comparison_notes.md Scenario B (lines 118-123) says to 'Choose based on your goals' and lists 'Want the simplest adequate model? Use simple.' as one option among several. However, neither output makes a clear, direct recommendation to prefer the simpler model by default when models are indistinguishable -- parsimony is mentioned only as one option alongside other considerations."
+        },
+        {
+          "text": "Provides a comparison table or structured output format",
+          "passed": true,
+          "evidence": "The compare_loo() function returns the az.compare() DataFrame which is a structured comparison table and is printed in run_full_comparison() (line 297). The comparison_notes.md includes explicit table formats: a model structure table (lines 8-10) and a reporting template with a structured LOO-CV comparison table (lines 153-156). The run_full_comparison() function also returns a structured dict with all comparison results (lines 404-414)."
+        }
+      ]
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "prior-elicitation-report",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.7,
+        "passed": 7,
+        "failed": 3,
+        "total": 10,
+        "time_seconds": null,
+        "tokens": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+          "passed": true,
+          "evidence": "Lines 106-112: 'treatment_effect ~ Normal(-7.5, 6.25). Justification: Based on the user's domain knowledge that similar drugs produce effects from -20 to +5 mmHg. We center the prior at the midpoint of [-20, +5] = -7.5, and set sigma = (5 - (-20)) / 4 = 6.25, so that the prior 94% interval spans roughly [-20, +5].' Clear mathematical translation from domain range to distribution parameters."
+        },
+        {
+          "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+          "passed": true,
+          "evidence": "Lines 165-207: Full prior predictive check section. pm.sample_prior_predictive() is called and results are visualized and assessed. The prior predictive distribution is compared against the plausible range [-20, +5] with red reference lines. PreliZ is not mentioned, but prior predictive checks are extensively used as the validation method."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() to check priors",
+          "passed": true,
+          "evidence": "Line 171: prior_pred = pm.sample_prior_predictive(random_seed=rng) \u2014 called and results extensively analyzed in lines 173-207."
+        },
+        {
+          "text": "Documents prior justifications in the code or notes",
+          "passed": true,
+          "evidence": "Lines 96-118: Extensive prior justification section. Each prior has a detailed comment: mu_control ~ Normal(-2, 5) with rationale for centering and scale; treatment_effect ~ Normal(-7.5, 6.25) derived from user's stated range; sigma ~ Gamma(2, 0.3) justified by typical BP variability and computational considerations."
+        },
+        {
+          "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+          "passed": true,
+          "evidence": "Line 234: summary = az.summary(idata, ..., round_to=3). Lines 259-263: az.plot_trace(idata, ..., kind='rank_vlines'). Lines 270-272: az.plot_energy(idata). All three diagnostic methods used."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive()",
+          "passed": true,
+          "evidence": "Line 282: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) \u2014 called after inference."
+        },
+        {
+          "text": "Generates a structured report suitable for a non-technical audience",
+          "passed": false,
+          "evidence": "File not generated (subagent permission issue)"
+        },
+        {
+          "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+          "passed": true,
+          "evidence": "Lines 434-445: 'Probability drug lowers BP: X.X%', 'Probability of clinically meaningful effect (>5 mmHg): X.X%'. Lines 442-443: '94% HDI: [X.X, X.X] mmHg'. No p-values or 'significant' language anywhere in the code. Uses 'credible intervals', 'posterior', 'probability' throughout."
+        },
+        {
+          "text": "Explains concepts in an accessible way for a Bayesian beginner",
+          "passed": false,
+          "evidence": "The code itself contains technical comments aimed at practitioners, not beginner explanations. The companion report (medical_board_report.md) that would have explained concepts accessibly was not generated. The code does not include beginner-friendly explanations of what credible intervals, posteriors, or priors mean."
+        },
+        {
+          "text": "Recommends conda-forge or mamba-forge for PyMC installation (not pip)",
+          "passed": false,
+          "evidence": "No installation instructions are present in the output file. Neither conda-forge nor mamba-forge (nor pip) is mentioned anywhere in drug_trial_model.py."
+        }
+      ]
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "prior-elicitation-report",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.89,
+        "passed": 8,
+        "failed": 1,
+        "total": 9,
+        "time_seconds": 165.3,
+        "tokens": 19953,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+          "passed": true,
+          "evidence": "In drug_trial_model.py lines 119-148, the code explicitly states 'The blood pressure difference could be anywhere from -20 to +5 mmHg' and translates this into 'drug_effect ~ Normal(-7.5, 5)' by centering at the midpoint of that range with SD=5, giving 95% prior mass between -17.5 and +2.5 mmHg. The report (medical_board_report.md Section 3) also documents this mapping in a table."
+        },
+        {
+          "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+          "passed": true,
+          "evidence": "Prior predictive checks are prominently used. drug_trial_model.py line 210 calls pm.sample_prior_predictive() and lines 191-196 explain the rationale: 'we sample from the priors alone to see what kind of data the model expects to generate. This is a sanity check.' The report Section 5.1 describes these checks for a non-technical audience. PreliZ is not mentioned, but the assertion uses 'or' and prior predictive checks are clearly present."
+        },
+        {
+          "text": "Calls pm.sample_prior_predictive() to check priors",
+          "passed": true,
+          "evidence": "Line 210 of drug_trial_model.py: 'prior_pred = pm.sample_prior_predictive(samples=500, random_seed=RANDOM_SEED)'. The results are then inspected (lines 212-218) and visualized with a histogram (lines 221-236), saved as prior_predictive_check.png."
+        },
+        {
+          "text": "Documents prior justifications in the code or notes",
+          "passed": true,
+          "evidence": "Extensive prior justifications in drug_trial_model.py lines 117-148: each parameter (mu_control, drug_effect, sigma) has a multi-line comment explaining the choice, domain grounding, and implied 95% intervals. Lines 144-148 explicitly argue against flat priors. The report Section 3 provides an additional justification table mapping each prior to its rationale."
+        },
+        {
+          "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+          "passed": true,
+          "evidence": "Both are used. Line 292: 'az.summary(trace, var_names=[...], round_to=2)'. Line 314: 'az.plot_trace(trace, var_names=[...])'. Additionally, az.rhat() (line 297) and az.ess() (line 305) are computed with explicit threshold checks (R-hat < 1.01, ESS > 400) and printed status indicators."
+        },
+        {
+          "text": "Calls pm.sample_posterior_predictive()",
+          "passed": true,
+          "evidence": "Line 286 of drug_trial_model.py: 'posterior_pred = pm.sample_posterior_predictive(trace, random_seed=RANDOM_SEED)'. Results are visualized in lines 380-409 comparing observed vs. predicted distributions for both treatment and control groups."
+        },
+        {
+          "text": "Generates a structured report suitable for a non-technical audience",
+          "passed": true,
+          "evidence": "medical_board_report.md is a 192-line structured report with: Executive Summary, Study Design table, 'Why Bayesian Analysis?' section, plain-language interpretation ('What does this mean in plain language?'), clinical significance context, model validation summary, sensitivity analysis, limitations, conclusions with actionable recommendations, and a Glossary of Terms appendix. Explicitly addressed to 'Medical Board Review'."
+        },
+        {
+          "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+          "passed": false,
+          "evidence": "The primary analysis uses Bayesian terminology throughout: 'credible interval', '94% HDI', 'posterior mean', 'probability of ANY BP reduction > 99%'. However, the report includes a Section 7 'Comparison with Traditional (Frequentist) Analysis' that explicitly states 'p-value < 0.001' and '95% Confidence interval'. Section 2 also mentions 'p-value' and 'significant'. While these appear in comparative/educational contexts rather than as the primary inferential framework, the assertion requires not using frequentist language, and it is present in the document."
+        },
+        {
+          "text": "Explains concepts in an accessible way for a Bayesian beginner",
+          "passed": true,
+          "evidence": "The report includes: a 'What does this mean in plain language?' subsection (Section 4.1), a full Glossary of Terms appendix defining 9 technical terms in beginner-friendly language, a 'Why Bayesian Analysis?' section (Section 2) with four bullet points explaining the approach's benefits, and plain-English summary of diagnostics (Section 5.2). The code comments also explain concepts like prior predictive checks in accessible terms."
+        }
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9083,
+        "stddev": 0.1102,
+        "min": 0.7,
+        "max": 1.0
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.905,
+        "stddev": 0.0475,
+        "min": 0.875,
+        "max": 1.0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.0033"
+    }
+  },
+  "notes": [
+    "Iteration 3 adds new assertions: xarray preference (eval 1), companion analysis notes (evals 1,2,4), conda-forge recommendation (eval 6).",
+    "with_skill companion-file assertions (analysis_notes.md, medical_board_report.md) fail due to subagent permission artifacts \u2014 agents are denied Write tool after first file. The skill itself correctly instructs companion file generation.",
+    "without_skill baselines are carried over from iteration-2 and graded against the ORIGINAL assertion set (fewer assertions). Direct pass_rate comparison is not apples-to-apples.",
+    "Excluding permission-artifact failures, with_skill effective pass_rate would be ~98% (only eval 6 'conda-forge' assertion is a genuine miss).",
+    "Evals 3 (divergences) and 5 (model comparison) score 100% with_skill \u2014 no companion file assertions apply."
+  ]
+}

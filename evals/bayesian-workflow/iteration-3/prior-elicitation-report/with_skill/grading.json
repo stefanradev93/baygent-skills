@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "Translates domain knowledge (-20 to +5 mmHg) into concrete prior distribution parameters",
+      "passed": true,
+      "evidence": "Lines 106-112: 'treatment_effect ~ Normal(-7.5, 6.25). Justification: Based on the user's domain knowledge that similar drugs produce effects from -20 to +5 mmHg. We center the prior at the midpoint of [-20, +5] = -7.5, and set sigma = (5 - (-20)) / 4 = 6.25, so that the prior 94% interval spans roughly [-20, +5].' Clear mathematical translation from domain range to distribution parameters."
+    },
+    {
+      "text": "Mentions PreliZ or prior predictive checks as a way to validate prior choices",
+      "passed": true,
+      "evidence": "Lines 165-207: Full prior predictive check section. pm.sample_prior_predictive() is called and results are visualized and assessed. The prior predictive distribution is compared against the plausible range [-20, +5] with red reference lines. PreliZ is not mentioned, but prior predictive checks are extensively used as the validation method."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() to check priors",
+      "passed": true,
+      "evidence": "Line 171: prior_pred = pm.sample_prior_predictive(random_seed=rng) — called and results extensively analyzed in lines 173-207."
+    },
+    {
+      "text": "Documents prior justifications in the code or notes",
+      "passed": true,
+      "evidence": "Lines 96-118: Extensive prior justification section. Each prior has a detailed comment: mu_control ~ Normal(-2, 5) with rationale for centering and scale; treatment_effect ~ Normal(-7.5, 6.25) derived from user's stated range; sigma ~ Gamma(2, 0.3) justified by typical BP variability and computational considerations."
+    },
+    {
+      "text": "Runs convergence diagnostics (az.summary or az.plot_trace)",
+      "passed": true,
+      "evidence": "Line 234: summary = az.summary(idata, ..., round_to=3). Lines 259-263: az.plot_trace(idata, ..., kind='rank_vlines'). Lines 270-272: az.plot_energy(idata). All three diagnostic methods used."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive()",
+      "passed": true,
+      "evidence": "Line 282: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) — called after inference."
+    },
+    {
+      "text": "Generates a structured report suitable for a non-technical audience",
+      "passed": false,
+      "evidence": "File not generated (subagent permission issue)"
+    },
+    {
+      "text": "Uses probability language (credible intervals, posterior probability) not frequentist language (p-values, significant)",
+      "passed": true,
+      "evidence": "Lines 434-445: 'Probability drug lowers BP: X.X%', 'Probability of clinically meaningful effect (>5 mmHg): X.X%'. Lines 442-443: '94% HDI: [X.X, X.X] mmHg'. No p-values or 'significant' language anywhere in the code. Uses 'credible intervals', 'posterior', 'probability' throughout."
+    },
+    {
+      "text": "Explains concepts in an accessible way for a Bayesian beginner",
+      "passed": false,
+      "evidence": "The code itself contains technical comments aimed at practitioners, not beginner explanations. The companion report (medical_board_report.md) that would have explained concepts accessibly was not generated. The code does not include beginner-friendly explanations of what credible intervals, posteriors, or priors mean."
+    },
+    {
+      "text": "Recommends conda-forge or mamba-forge for PyMC installation (not pip)",
+      "passed": false,
+      "evidence": "No installation instructions are present in the output file. Neither conda-forge nor mamba-forge (nor pip) is mentioned anywhere in drug_trial_model.py."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 3,
+    "total": 10,
+    "pass_rate": 0.70
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "Builds a hierarchical/multilevel model with school-level and student-level parameters",
+      "passed": true,
+      "evidence": "Lines 127-157: Model has population-level hyperpriors (mu_global, sigma_between), school-level parameters (mu_school via school_offset), and student-level likelihood (Normal with sigma_within). Students nested within schools."
+    },
+    {
+      "text": "Uses non-centered parameterization (mu_offset * sigma pattern or equivalent)",
+      "passed": true,
+      "evidence": "Lines 144-149: school_offset = pm.Normal('school_offset', mu=0, sigma=1, dims='school') followed by mu_school = pm.Deterministic('mu_school', mu_global + school_offset * sigma_between, dims='school'). Classic non-centered parameterization."
+    },
+    {
+      "text": "Calls pm.sample_prior_predictive() before inference",
+      "passed": true,
+      "evidence": "Line 162: prior_pred = pm.sample_prior_predictive(random_seed=rng) — called within the model context before pm.sample() on line 193."
+    },
+    {
+      "text": "Calls pm.sample_posterior_predictive() after inference",
+      "passed": true,
+      "evidence": "Line 197: idata.extend(pm.sample_posterior_predictive(idata, random_seed=rng)) — called after pm.sample()."
+    },
+    {
+      "text": "Uses az.summary() or az.plot_trace() for convergence diagnostics",
+      "passed": true,
+      "evidence": "Line 218: summary = az.summary(idata, round_to=3). Line 237: az.plot_trace(idata, var_names=[...], kind='rank_vlines'). Both used."
+    },
+    {
+      "text": "Includes shrinkage analysis showing small schools pulled toward grand mean",
+      "passed": true,
+      "evidence": "Lines 377-417: Full shrinkage plot comparing observed (no-pooling) school means vs posterior (partial-pooling) means. Points sized by number of students (s=sizes*5). Annotations show n=X for each school. Red dashed line for no pooling, gray line for complete pooling (grand mean). Title: 'Shrinkage Plot: Partial Pooling Toward Grand Mean'."
+    },
+    {
+      "text": "Computes ICC (intraclass correlation) or variance partition coefficient",
+      "passed": true,
+      "evidence": "Lines 419-450: ICC computed as sigma_between^2 / (sigma_between^2 + sigma_within^2) using posterior draws. Reports mean and 94% HDI. Prints interpretation: '~X% of the total variance in test scores is attributable to differences between schools'. Also plots the ICC posterior distribution."
+    },
+    {
+      "text": "Uses coords and dims in the PyMC model definition",
+      "passed": true,
+      "evidence": "Lines 122-125: coords = {'school': school_names, 'obs': np.arange(len(df))}. Line 127: pm.Model(coords=coords). Lines 129-157: dims='obs', dims='school' used throughout."
+    },
+    {
+      "text": "Reports credible intervals (94% HDI preferred) for school-level estimates",
+      "passed": true,
+      "evidence": "Line 425: icc_hdi = az.hdi(icc_draws, hdi_prob=0.94). Line 454: az.plot_forest(idata, var_names=['mu_school'], combined=True) which defaults to 94% HDI. Line 455: Title 'School-Level Mean Estimates (94% HDI)'. Line 485: az.summary for school-level estimates (defaults to 94% HDI)."
+    },
+    {
+      "text": "Runs calibration checks using ArviZ (plot_ppc_pit or similar)",
+      "passed": true,
+      "evidence": "Lines 322-367: Uses azp.plot_ppc_pit(idata) for PPC-PIT calibration, and azp.plot_ppc_pit(idata, loo_pit=True) for LOO-PIT. Falls back to az.plot_loo_pit if arviz_plots is unavailable."
+    },
+    {
+      "text": "Generates a companion analysis notes file (markdown) interpreting the results and diagnostics",
+      "passed": false,
+      "evidence": "File not generated (subagent permission issue)"
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 1,
+    "total": 11,
+    "pass_rate": 0.91
+  }
+}

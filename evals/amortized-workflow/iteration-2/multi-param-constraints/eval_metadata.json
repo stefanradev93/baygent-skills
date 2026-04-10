@@ -1,0 +1,19 @@
+{
+  "eval_id": 2,
+  "eval_name": "multi-param-constraints",
+  "prompt": "I have a compartmental model with 4 parameters: infection rate beta (positive), recovery rate gamma (positive), initial infected fraction i0 (between 0 and 1), and reporting probability p (between 0 and 1). The simulator generates daily case counts for 30 days. I want to train an amortized estimator with BayesFlow that correctly handles the parameter constraints. Set up the full workflow.",
+  "assertions": [
+    "Defines prior with correct support for all 4 parameters (beta>0, gamma>0, 0<i0<1, 0<p<1)",
+    "Uses bf.Adapter() with explicit constraint handling",
+    "Calls .constrain() with lower=0 for beta and gamma",
+    "Calls .constrain() with lower=0, upper=1 for i0 and p",
+    "Routes the daily case counts through summary_variables (not inference_conditions)",
+    "Uses a summary network appropriate for sequential data (TimeSeriesTransformer, TimeSeriesNetwork, or SetTransformer if treating days as exchangeable is justified and documented)",
+    "Starts with the Small model configuration from references/model-sizes.md",
+    "Sets summary_dim to approximately 2x the number of parameters (around 8)",
+    "Passes validation_data= to the fit_* call",
+    "Runs in-silico diagnostics before any real-data inference",
+    "Checks all 4 parameters individually against house thresholds",
+    "Does NOT flatten the time series into inference_conditions"
+  ]
+}

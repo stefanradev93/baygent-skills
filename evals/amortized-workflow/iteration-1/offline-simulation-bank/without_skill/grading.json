@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "Uses workflow.fit_offline() or workflow.fit_disk() (not fit_online, since no simulator is available)",
+      "passed": true,
+      "evidence": "Line 153: `history = workflow.fit_offline(` -- correctly uses fit_offline."
+    },
+    {
+      "text": "Splits the simulation bank into training and held-out validation/test sets",
+      "passed": true,
+      "evidence": "Lines 83-99: Data is split into train (18,000), val (1,000), and test (1,000) using shuffled indices."
+    },
+    {
+      "text": "Does NOT attempt to create or call a simulator function (it's unavailable)",
+      "passed": true,
+      "evidence": "No simulator function is defined or called anywhere in the script. Lines 229-235 explicitly note the simulator is unavailable."
+    },
+    {
+      "text": "Uses the naming shorthand (inference_variables=, summary_variables=) since no adapter transforms are needed, OR uses an explicit adapter — either is acceptable",
+      "passed": true,
+      "evidence": "Lines 109-115: Uses an explicit bf.Adapter() that concatenates into 'summary_variables' and 'inference_variables'."
+    },
+    {
+      "text": "Routes observables through summary_variables with a summary network (not inference_conditions)",
+      "passed": true,
+      "evidence": "Line 113: `.concatenate([\"observables\"], into=\"summary_variables\")` routes observables to the summary network. Line 123: `summary_net = bf.networks.SetTransformer(...)` is passed as `summary_network=summary_net` on line 142."
+    },
+    {
+      "text": "Uses a SetTransformer for the i.i.d. observations",
+      "passed": true,
+      "evidence": "Line 123: `summary_net = bf.networks.SetTransformer(summary_dim=2 * NUM_PARAMS, ...)` and line 111: `.as_set([\"observables\"])` reshapes for set input."
+    },
+    {
+      "text": "Passes validation_data= to fit_offline or fit_disk",
+      "passed": true,
+      "evidence": "Line 157: `validation_data=val_data,` is passed to workflow.fit_offline()."
+    },
+    {
+      "text": "Saves and inspects training history",
+      "passed": true,
+      "evidence": "Lines 162-165: History saved to JSON. Lines 168-176: Final train/val loss printed and overfitting check performed. Lines 179-190: Loss curves plotted and saved."
+    },
+    {
+      "text": "Uses the held-out test set for compute_default_diagnostics (not the training data)",
+      "passed": true,
+      "evidence": "Line 207-209: `metrics = workflow.compute_default_diagnostics(test_data=test_data, ...)` uses test_data, which is the held-out set (lines 96-98)."
+    },
+    {
+      "text": "Checks diagnostics against house thresholds before declaring success",
+      "passed": false,
+      "evidence": "No threshold checks are applied to the diagnostic metrics. Lines 207-212 compute and print diagnostics but never compare them against any thresholds (e.g., R-squared, calibration error bounds). The metrics are saved to CSV and printed but not evaluated programmatically."
+    },
+    {
+      "text": "Notes the limitation that posterior predictive checks require access to the simulator, which is unavailable",
+      "passed": true,
+      "evidence": "Lines 229-235: Comment and print statement explicitly note PPCs cannot be performed without the simulator. Also in analysis_notes.md lines 49-51."
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 1,
+    "total": 11,
+    "pass_rate": 0.91
+  }
+}

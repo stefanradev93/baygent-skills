@@ -1,0 +1,70 @@
+{
+  "scenario": "multi-param-constraints",
+  "condition": "without_skill",
+  "total_assertions": 12,
+  "passed": 10,
+  "failed": 2,
+  "pass_rate": 0.8333,
+  "assertions": [
+    {
+      "assertion": "Defines prior with correct support for all 4 parameters (beta>0, gamma>0, 0<i0<1, 0<p<1)",
+      "result": "pass",
+      "evidence": "Lines 48-51: beta = rng.gamma(shape=2.0, scale=0.3), gamma = rng.gamma(shape=2.0, scale=0.15), i0 = rng.beta(a=2.0, b=50.0), p = rng.beta(a=5.0, b=2.0). All supports correct."
+    },
+    {
+      "assertion": "Uses bf.Adapter() with explicit constraint handling",
+      "result": "pass",
+      "evidence": "Lines 142-156: adapter = bf.Adapter() with .constrain() calls for all four parameters."
+    },
+    {
+      "assertion": "Calls .constrain() with lower=0 for beta and gamma",
+      "result": "pass",
+      "evidence": "Line 147: .constrain(\"beta\", lower=0) and Line 148: .constrain(\"gamma\", lower=0)."
+    },
+    {
+      "assertion": "Calls .constrain() with lower=0, upper=1 for i0 and p",
+      "result": "pass",
+      "evidence": "Line 149: .constrain(\"i0\", lower=0, upper=1) and Line 150: .constrain(\"p\", lower=0, upper=1)."
+    },
+    {
+      "assertion": "Routes the daily case counts through summary_variables (not inference_conditions)",
+      "result": "pass",
+      "evidence": "Line 156: .concatenate([\"daily_cases\"], into=\"summary_variables\"). No inference_conditions key used."
+    },
+    {
+      "assertion": "Uses a summary network appropriate for sequential data (TimeSeriesTransformer, TimeSeriesNetwork, or SetTransformer if treating days as exchangeable is justified and documented)",
+      "result": "pass",
+      "evidence": "Line 120: summary_net = bf.networks.TimeSeriesTransformer(...). Analysis notes justify: 'Daily case counts have temporal ordering — day 5 vs day 25 matters.'"
+    },
+    {
+      "assertion": "Starts with the Small model configuration from references/model-sizes.md",
+      "result": "fail",
+      "evidence": "No reference to 'Small' configuration or references/model-sizes.md anywhere in code or notes. Architecture uses custom values not sourced from the skill's model-sizes reference."
+    },
+    {
+      "assertion": "Sets summary_dim to approximately 2x the number of parameters (around 8)",
+      "result": "pass",
+      "evidence": "Line 121: summary_dim=8. Line 116 comment: '4 parameters -> summary_dim = 2 * num_params = 8'."
+    },
+    {
+      "assertion": "Passes validation_data= to the fit_* call",
+      "result": "pass",
+      "evidence": "Line 185: validation_data=300 in workflow.fit_online() call."
+    },
+    {
+      "assertion": "Runs in-silico diagnostics before any real-data inference",
+      "result": "pass",
+      "evidence": "Lines 236-250: in-silico diagnostics run with 300 simulated test datasets before any real-data inference section."
+    },
+    {
+      "assertion": "Checks all 4 parameters individually against house thresholds",
+      "result": "fail",
+      "evidence": "Lines 280-287 check posterior coverage and lines 384-395 check constraint violations per parameter, but neither checks against predefined house thresholds (ECE/NRMSE). Uses R\u00b2/RMSE/coverage metrics instead."
+    },
+    {
+      "assertion": "Does NOT flatten the time series into inference_conditions",
+      "result": "pass",
+      "evidence": "Line 156: daily_cases routed into summary_variables. The string 'inference_conditions' does not appear anywhere in the code."
+    }
+  ]
+}

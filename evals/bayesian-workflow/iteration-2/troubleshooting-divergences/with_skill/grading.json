@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Explicitly states that results are unreliable and should NOT be interpreted", "passed": true, "evidence": "Verdict: Do NOT interpret these results. The results are unreliable and must not be used for inference."},
+    {"text": "Identifies all three symptoms: divergences, high R-hat, stuck chain", "passed": true, "evidence": "Symptom Summary table identifies all three: 47 divergences, R-hat 1.03, one chain stuck."},
+    {"text": "Suggests non-centered reparameterization as a fix", "passed": true, "evidence": "Fix 2 dedicated to non-centered reparameterization with before/after code example."},
+    {"text": "Suggests increasing target_accept (to 0.95 or higher)", "passed": true, "evidence": "Fix 1 suggests target_accept=0.95 and up to 0.99 with concrete code examples."},
+    {"text": "Suggests checking for multimodality", "passed": true, "evidence": "Fix 5 dedicated to investigating multimodality. Also mentioned as a root cause."},
+    {"text": "Provides concrete Python/PyMC code examples for at least two fixes", "passed": true, "evidence": "Concrete code for all five fixes: target_accept, non-centered, stronger priors, warmup, pair plots."},
+    {"text": "Mentions R-hat threshold of 1.01 (not 1.1 or other outdated thresholds)", "passed": true, "evidence": "1.01 threshold mentioned multiple times including in verification code: summary['r_hat'] <= 1.01."},
+    {"text": "Suggests diagnostic visualization (pair plots, trace plots, or energy plots)", "passed": true, "evidence": "All three: az.plot_pair, az.plot_trace(kind='rank_vlines'), az.plot_energy."}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

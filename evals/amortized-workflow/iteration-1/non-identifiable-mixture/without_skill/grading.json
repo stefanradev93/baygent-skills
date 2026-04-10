@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "Defines a Gaussian mixture simulator with parameters w, mu1, mu2, sigma",
+      "passed": true,
+      "evidence": "Lines 43-68: prior() returns dict with w, mu1, mu2, sigma. observation_model() generates mixture draws using these parameters. Line 71: simulator = bf.make_simulator([prior, observation_model])."
+    },
+    {
+      "text": "Uses bf.Adapter() with appropriate constraints (w between 0 and 1, sigma > 0)",
+      "passed": true,
+      "evidence": "Lines 113-121: adapter = bf.Adapter().as_set(['x']).constrain('w', lower=0, upper=1).constrain('sigma', lower=0).convert_dtype('float64', 'float32').concatenate(...)."
+    },
+    {
+      "text": "Uses a SetTransformer for the i.i.d. mixture draws",
+      "passed": true,
+      "evidence": "Lines 97-103: summary_net = bf.networks.SetTransformer(summary_dim=8, embed_dims=(32, 32), num_heads=(2, 2), mlp_depths=(1, 1), mlp_widths=(64, 64))."
+    },
+    {
+      "text": "Runs in-silico diagnostics with compute_default_diagnostics",
+      "passed": true,
+      "evidence": "Line 187: metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True). Also line 179: workflow.plot_default_diagnostics(test_data=test_data)."
+    },
+    {
+      "text": "Identifies or discusses potential non-identifiability (label switching) from diagnostics",
+      "passed": true,
+      "evidence": "Lines 196-207: Extensive print statements explaining expected poor recovery for mu1/mu2 due to label switching. Lines 13-16 in the docstring explain the symmetry. analysis_notes.md lines 16-19 detail the label switching problem."
+    },
+    {
+      "text": "Interprets posterior contraction — expects weak contraction for mu1/mu2 when w is near 0.5",
+      "passed": true,
+      "evidence": "Lines 199-200: 'mu1: POOR recovery (high NRMSE, low R2) due to label switching' and same for mu2. Lines 206-207: 'If mu1 and mu2 show R2 near 0 or negative, this confirms the network cannot distinguish which component is first vs second. The posterior is bimodal for these parameters.' analysis_notes.md lines 40-44 discuss expected NRMSE and R2 metrics."
+    },
+    {
+      "text": "Does NOT interpret poor diagnostics as good results — flags the issue",
+      "passed": true,
+      "evidence": "Lines 248-271: Explicit go/no-go gate that checks R2 < 0.3 for mu1/mu2 and prints 'STOP: mu1 and/or mu2 show poor recovery (R2 < 0.3). This confirms label switching non-identifiability.' with 'Do NOT proceed to real-data inference with unconstrained mu1, mu2.'"
+    },
+    {
+      "text": "Checks ECE per parameter and discusses calibration in context of identifiability",
+      "passed": false,
+      "evidence": "The code computes compute_default_diagnostics (line 187) and prints the full metrics table (line 190), but does NOT explicitly extract or discuss ECE (Expected Calibration Error) per parameter. Lines 219-242 only check R2 and NRMSE per parameter. analysis_notes.md line 44 mentions calibration briefly ('Calibration (ECDF-based): May show poor calibration for mu1 and mu2') but the code itself does not check or interpret ECE values."
+    },
+    {
+      "text": "Discusses or suggests remediation (e.g., ordering constraint mu1 < mu2, or accepting non-identifiability)",
+      "passed": true,
+      "evidence": "Lines 264-271: Lists three remediation options: ordering constraint mu1 < mu2, post-hoc relabeling, and identifiable quantities (separation |mu1 - mu2|). analysis_notes.md lines 64-97 provide detailed remediation strategies with code examples."
+    },
+    {
+      "text": "Does NOT skip diagnostics or proceed to real-data inference with poor recovery",
+      "passed": false,
+      "evidence": "Lines 282-312: The code proceeds to run inference on a synthetic test dataset (w=0.5, maximally ambiguous) and prints posterior summaries REGARDLESS of the go/no-go gate result. Lines 270-271 say 'Do NOT proceed to real-data inference with unconstrained mu1, mu2' but lines 282+ do exactly that unconditionally. The visualization at lines 317-365 also runs unconditionally."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 2,
+    "total": 10,
+    "pass_rate": 0.8
+  }
+}

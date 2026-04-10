@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "skill_name": "amortized-workflow",
+    "skill_path": "/Users/alex_andorra/tptm_alex/portfolio/agent-skills/baygent-skills/amortized-workflow",
+    "executor_model": "claude-sonnet-4-6",
+    "grader_model": "claude-opus-4-6",
+    "timestamp": "2026-04-07T00:00:00Z",
+    "bayesflow_version": "2.0.10",
+    "evals_run": [
+      "gaussian-location-scale",
+      "multi-param-constraints",
+      "regression-varying-n",
+      "time-series-ar2",
+      "non-identifiable-mixture",
+      "offline-simulation-bank",
+      "bayesian-denoising"
+    ],
+    "runs_per_configuration": 1
+  },
+  "with_skill_results": {
+    "gaussian-location-scale": {"passed": 16, "failed": 0, "total": 16, "pass_rate": 1.0},
+    "multi-param-constraints": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.0},
+    "regression-varying-n": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.0},
+    "time-series-ar2": {"passed": 11, "failed": 0, "total": 11, "pass_rate": 1.0},
+    "non-identifiable-mixture": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0},
+    "offline-simulation-bank": {"passed": 11, "failed": 0, "total": 11, "pass_rate": 1.0},
+    "bayesian-denoising": {"passed": 14, "failed": 0, "total": 14, "pass_rate": 1.0},
+    "aggregate": {
+      "total_assertions": 86,
+      "total_passed": 86,
+      "total_failed": 0,
+      "overall_pass_rate": 1.0
+    }
+  },
+  "without_skill_results": {
+    "gaussian-location-scale": {"passed": 15, "failed": 1, "total": 16, "pass_rate": 0.938},
+    "multi-param-constraints": {"passed": 10, "failed": 2, "total": 12, "pass_rate": 0.833},
+    "regression-varying-n": {"passed": 10, "failed": 2, "total": 12, "pass_rate": 0.833},
+    "time-series-ar2": {"passed": 9, "failed": 2, "total": 11, "pass_rate": 0.818},
+    "non-identifiable-mixture": {"passed": 8, "failed": 2, "total": 10, "pass_rate": 0.8},
+    "offline-simulation-bank": {"passed": 9, "failed": 2, "total": 11, "pass_rate": 0.818},
+    "bayesian-denoising": {"passed": 12, "failed": 2, "total": 14, "pass_rate": 0.857},
+    "aggregate": {
+      "total_assertions": 86,
+      "total_passed": 73,
+      "total_failed": 13,
+      "overall_pass_rate": 0.849
+    }
+  },
+  "comparison": {
+    "with_skill_pass_rate": 1.0,
+    "without_skill_pass_rate": 0.849,
+    "lift": 0.151,
+    "common_failures_without_skill": [
+      "No reference to Small model configuration from model-sizes.md (6/7 scenarios)",
+      "No diagnostic threshold gating with house thresholds ECE/NRMSE (4/7 scenarios)",
+      "Fabricated BayesFlow API calls (bf.diagnostics.run_sbc, approximator.constrain, bf.AmortizedWorkflow) (4/7 scenarios)",
+      "Missing adapter methods (.broadcast, .rename for routing) — uses naming convention instead (2/7 scenarios)",
+      "Reimplements forward model for PPCs instead of reusing observation_model function (1/7 scenarios)",
+      "Doesn't save training history as JSON or run structured inspection (1/7 scenarios)",
+      "Doesn't follow image-generation.md guidance for image-valued targets (1/7 scenarios)"
+    ]
+  }
+}

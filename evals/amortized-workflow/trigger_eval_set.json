@@ -1,0 +1,82 @@
+[
+  {
+    "query": "I have a physics simulator that takes 3 parameters and produces 100 noisy measurements per run. I want to infer the parameters from real experimental data without running MCMC. Can you set up amortized inference with BayesFlow?",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to do simulation-based inference for a stochastic epidemiological model where the likelihood is intractable. I can generate simulated outbreaks from the model. How do I train a neural posterior estimator?",
+    "should_trigger": true
+  },
+  {
+    "query": "I have a pre-simulated bank of 50k parameter-data pairs from a climate model. The simulator takes 2 hours per run so I can't generate on the fly. Can you train BayesFlow offline on this data?",
+    "should_trigger": true
+  },
+  {
+    "query": "My BayesFlow model has poor calibration — the ECE is 0.15 and the recovery plots look biased. What's going wrong and how do I fix it?",
+    "should_trigger": true
+  },
+  {
+    "query": "I want to use neural posterior estimation to amortize inference over different experimental designs. Each design gives me a different number of observations (between 10 and 200). How do I handle the varying sample sizes?",
+    "should_trigger": true
+  },
+  {
+    "query": "I trained a FlowMatching network on simulated data and the loss converged, but when I run inference on real data I get NaN samples. Help me debug this.",
+    "should_trigger": true
+  },
+  {
+    "query": "I have a generative model for EEG time series and I want to use amortized inference to estimate the underlying neural parameters. The data is sequential, not exchangeable. What architecture should I use?",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to compare two different summary network architectures for my SBI workflow — a SetTransformer vs a DeepSet. How do I evaluate which one gives better posterior approximations?",
+    "should_trigger": true
+  },
+  {
+    "query": "I want to do posterior predictive checks after running BayesFlow inference on my real data. How do I generate replicated datasets from the posterior samples?",
+    "should_trigger": true
+  },
+  {
+    "query": "Can you help me set up a StableConsistencyModel for fast posterior sampling at deployment time? I need sub-millisecond inference for a real-time application.",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to fit a hierarchical Bayesian model with PyMC to estimate treatment effects across 50 clinics. The model has random slopes and intercepts. Can you set this up?",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to train a variational autoencoder in PyTorch to generate synthetic images. Can you write the encoder and decoder networks?",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to run MCMC sampling with Stan to estimate the parameters of an ODE model. Can you write the Stan code?",
+    "should_trigger": false
+  },
+  {
+    "query": "Help me set up normalizing flows in nflows for density estimation on tabular data. I want to learn the joint distribution of 10 features.",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to do Bayesian optimization to find the best hyperparameters for my XGBoost model. Can you set up BoTorch for this?",
+    "should_trigger": false
+  },
+  {
+    "query": "I'm building a causal inference pipeline with DoWhy and econml to estimate heterogeneous treatment effects from an observational study. Can you help me set up the CATE estimator?",
+    "should_trigger": false
+  },
+  {
+    "query": "Can you help me implement a Gaussian process classifier using GPyTorch for binary classification with uncertainty estimates?",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to do approximate Bayesian computation (ABC) with rejection sampling to estimate parameters of a population genetics model. Can you write the ABC loop?",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to forecast monthly revenue using a Bayesian structural time series model in PyMC. I have 5 years of data with trend, seasonality, and a regression component.",
+    "should_trigger": false
+  },
+  {
+    "query": "Help me build a neural ODE in torchdiffeq to model continuous-time dynamics of a biological system. I have time-course measurements at irregular intervals.",
+    "should_trigger": false
+  }
+]

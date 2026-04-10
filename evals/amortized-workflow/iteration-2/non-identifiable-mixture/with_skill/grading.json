@@ -1,0 +1,60 @@
+{
+  "scenario": "non-identifiable-mixture",
+  "condition": "with_skill",
+  "total_assertions": 10,
+  "passed": 10,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "assertions": [
+    {
+      "assertion": "Defines a Gaussian mixture simulator with parameters w, mu1, mu2, sigma",
+      "result": "pass",
+      "evidence": "Lines 55-72: prior() returns dict with w, mu1, mu2, sigma. observation_model() generates mixture draws using Bernoulli component assignment and Normal components."
+    },
+    {
+      "assertion": "Uses bf.Adapter() with appropriate constraints (w between 0 and 1, sigma > 0)",
+      "result": "pass",
+      "evidence": "Lines 118-129: adapter uses .constrain(\"w\", lower=0, upper=1) (line 122) and .constrain(\"sigma\", lower=0) (line 123)."
+    },
+    {
+      "assertion": "Uses a SetTransformer for the i.i.d. mixture draws",
+      "result": "pass",
+      "evidence": "Lines 100-106: summary_net = bf.networks.SetTransformer(summary_dim=8, ...). Line 121: .as_set([\"x\"]) prepares data for the SetTransformer."
+    },
+    {
+      "assertion": "Runs in-silico diagnostics with compute_default_diagnostics",
+      "result": "pass",
+      "evidence": "Line 191: metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True). Line 184: workflow.plot_default_diagnostics(test_data=test_data)."
+    },
+    {
+      "assertion": "Identifies or discusses potential non-identifiability (label switching) from diagnostics",
+      "result": "pass",
+      "evidence": "Lines 13-16 of mixture_model.py discuss label switching. analysis_notes.md lines 14-18 explain the symmetry: 'swapping (w, mu1, mu2) with (1-w, mu2, mu1) produces the exact same likelihood'."
+    },
+    {
+      "assertion": "Interprets posterior contraction — expects weak contraction for mu1/mu2 when w is near 0.5",
+      "result": "pass",
+      "evidence": "analysis_notes.md lines 26-27: 'When w is near 0.5, the posterior for w will be broad and centered around 0.5, giving weak contraction.' Lines 33-34 explain the mechanism."
+    },
+    {
+      "assertion": "Does NOT interpret poor diagnostics as good results — flags the issue",
+      "result": "pass",
+      "evidence": "Lines 228-234: STOP branch prints '*** STOPPING: Diagnostics indicate non-identifiability or poor recovery. ***' and 'Do NOT proceed to real-data inference with this model.'"
+    },
+    {
+      "assertion": "Checks ECE per parameter and discusses calibration in context of identifiability",
+      "result": "pass",
+      "evidence": "Line 191 computes all default diagnostics including ECE. Lines 214-217 iterate per-parameter verdicts. analysis_notes.md line 36: 'ECE > 0.10 for mu1 and/or mu2 — confirming miscalibration'."
+    },
+    {
+      "assertion": "Discusses or suggests remediation (e.g., ordering constraint mu1 < mu2, or accepting non-identifiability)",
+      "result": "pass",
+      "evidence": "analysis_notes.md lines 64-98: four remediation strategies including ordering constraint mu1 < mu2 with code example, reparameterization, post-hoc relabeling, and increased model capacity."
+    },
+    {
+      "assertion": "Does NOT skip diagnostics or proceed to real-data inference with poor recovery",
+      "result": "pass",
+      "evidence": "Lines 228-234: on STOP, prints 'Do NOT proceed to real-data inference with this model.' Full diagnostics run (lines 179-221) and go/no-go gate enforced before any downstream use."
+    }
+  ]
+}

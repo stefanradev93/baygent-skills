@@ -1,0 +1,27 @@
+{
+  "pre_treatment_slope_treated": -0.5608377251702555,
+  "pre_treatment_slope_control": -0.21000388372077966,
+  "slope_difference": -0.3508338414494759,
+  "parallel_trends_violation": true,
+  "naive_did": {
+    "mean": -2.8301443354235087,
+    "hdi_94_lo": -3.715436129821434,
+    "hdi_94_hi": -1.9971284037567532,
+    "p_negative": 1.0
+  },
+  "did_with_group_trends": {
+    "mean": -0.9251047318415183,
+    "hdi_94_lo": -2.4809851184804175,
+    "hdi_94_hi": 0.5491744626811046,
+    "p_negative": 0.88075
+  },
+  "placebo_test": {
+    "mean": -0.9026966677509877,
+    "hdi_94_lo": -1.8621932407627158,
+    "hdi_94_hi": 0.1036290966363077,
+    "zero_in_hdi": true,
+    "pass": false
+  },
+  "synthetic_control_fitted": true,
+  "true_effect": -1.5
+}
