@@ -27,7 +27,7 @@ import math
 import sys
 
 
-# ── Thresholds ────────────────────────────────────────────────
+# Thresholds
 OVERFIT_RATIO = 1.1       # avg val_loss (last 10%) > OVERFIT_RATIO * avg train_loss (last 10%)
 UNDERFIT_RATIO = 0.99     # loss still decreasing by > 1% at final epoch
 
