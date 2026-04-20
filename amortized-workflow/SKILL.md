@@ -58,7 +58,7 @@ These rules are non-negotiable. Violating any of them will silently produce wron
 - **MUST start with the Base network configuration** from `references/model-sizes.md`. Scale up to Large or XL ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
 - **MUST use `workflow.simulate(N)` to generate test data** for diagnostics — not a Python for-loop over `simulator()`. The simulator returned by `bf.make_simulator` is a batched object; `workflow.simulate(N)` calls it efficiently and returns data in the format the workflow expects.
 - **MUST use `workflow.compute_default_diagnostics(test_data=...)` and `workflow.plot_default_diagnostics(test_data=...)`** for in-silico diagnostics. NEVER hand-roll coverage, bias, or calibration computations — the built-in methods are correct, complete, and consistent with the house thresholds.
-- **For image-valued inference targets, follow `references/image-generation.md`.** MUST use `bf.networks.DiffusionModel(subnet=...)` with `UNet`, `UViT`, or `ResidualUViT` — not the default low-dimensional setup. Conditions must be spatially concatenable with the image target (broadcast `(B, D)` to `(B, H, W, D)`). `scripts/check_diagnostics.py` does not apply; use visual sample grids instead.
+- **For image-valued inference targets, follow `references/image-generation.md`.** MUST use `bf.networks.DiffusionModel(subnet=...)` with `UNet`, `UViT`, or `ResidualUViT` — not the default low-dimensional setup. Conditions must be spatially concatenable with the image target (broadcast `(B, D)` to `(B, H, W, D)`). The standard diagnostic report does not apply; use visual sample grids instead.
 - **`workflow.sample()` returns original parameter names, NOT `"inference_variables"`.** The adapter's reverse transform restores the original keys from the simulator (e.g., `"alpha"`, `"beta"`, `"sigma"`). Each parameter has shape `(batch, num_samples)` for scalars or `(batch, num_samples, d)` for vectors. NEVER index into `"inference_variables"` — that key does not exist in the output.
 - **MUST reuse the existing simulator functions for PPCs.** NEVER re-implement the generative model by hand for posterior predictive checks. Loop over a subset of posterior draws (50 is a good default), indexing over the `num_samples` axis, and pass each draw through the simulator's forward model.
 - **MUST save `history.history` as JSON** (not CSV, not a DataFrame — it is a plain dict). Then run `scripts/inspect_training.py` or call `inspect_history()` in-process.
@@ -67,6 +67,7 @@ These rules are non-negotiable. Violating any of them will silently produce wron
 - **NEVER flatten structured data into `inference_conditions`.** Sets, time series, and images MUST go through `summary_variables` with an appropriate summary network.
 - **`workflow.plot_default_diagnostics()` ALWAYS returns a `dict[str, Figure]`.** Iterate directly over `.items()` to save figures. Do not type-check or branch on the return type.
 - **NEVER skip in-silico diagnostics.** Good training loss does not imply good inference.
+- **MUST generate `report.md` after every training + diagnostics run.** Store all artifacts in `<slug>/` (see `references/reporting.md` for naming and structure). Save all diagnostic figures with their standard names, save `metrics.csv`, and produce a self-contained markdown diagnostic report. If real data is available, include the optional real-data sections in the same report. For image-valued targets, skip the standard report and use visual sample grids instead.
 
 ## Installation
 
@@ -143,16 +144,20 @@ adapter = (
 )
 
 # --------------------------------------------------
-# 4. Create workflow
+# 4. Create results folder and workflow
 # --------------------------------------------------
+
+import os
+
+results_dir = "<slug>"  # e.g., "churn-model" or "churn-model-v2" for iterations
+os.makedirs(results_dir, exist_ok=True)
 
 workflow = bf.BasicWorkflow(
     simulator=simulator,
     inference_network=inference_net,
     summary_network=summary_net,
     adapter=adapter,
-    checkpoint_filepath="checkpoints",
-    checkpoint_name="your_model",
+    checkpoint_filepath=results_dir,
 )
 
 # --------------------------------------------------
@@ -160,7 +165,7 @@ workflow = bf.BasicWorkflow(
 # --------------------------------------------------
 
 history = workflow.fit_online(
-    epochs=500,
+    epochs=500,          # always use at least 100 epochs
     batch_size=32,
     num_batches_per_epoch=100,
     validation_data=300,  # auto-simulates 300 validation sets
@@ -170,7 +175,7 @@ history = workflow.fit_online(
 import json
 from scripts.inspect_training import inspect_history
 
-with open("history.json", "w") as f:
+with open(os.path.join(results_dir, "history.json"), "w") as f:
     json.dump(history.history, f)
 
 training_report = inspect_history(history.history)
@@ -182,33 +187,45 @@ if not training_report["overall"]["ok"]:
         print(f"  - {issue}")
 
 # --------------------------------------------------
-# 6. In-silico diagnostics on held-out simulations
+# 6. In-silico diagnostics and reporting
 # --------------------------------------------------
 
 # MUST use workflow.simulate() — NEVER loop over simulator() manually.
 # MUST use the built-in diagnostics — NEVER hand-roll coverage/bias/calibration.
 test_data = workflow.simulate(300)
 
-# plot_default_diagnostics ALWAYS returns a dict[str, Figure].
-# No need to type-check — iterate directly.
+# --- Save diagnostic figures (standard names from references/reporting.md) ---
+import matplotlib.pyplot as plt
+
 figures = workflow.plot_default_diagnostics(test_data=test_data)
-for name, fig in figures.items():
-    fig.savefig(f"diagnostics_{name}.png", dpi=150, bbox_inches="tight")
+figure_names = {
+    "losses": "loss.png",
+    "recovery": "recovery.png",
+    "calibration_ecdf": "calibration_ecdf.png",
+    "coverage": "coverage.png",
+    "z_score_contraction": "z_score_contraction.png",
+}
+for key, fig in figures.items():
+    fig.savefig(os.path.join(results_dir, figure_names[key]), dpi=150, bbox_inches="tight")
     plt.close(fig)
 
+# --- Save numerical diagnostics ---
 metrics = workflow.compute_default_diagnostics(test_data=test_data, as_data_frame=True)
-
-# --- Mandatory: save diagnostics and check house thresholds ---
-from scripts.check_diagnostics import check_diagnostics
-
-metrics.to_csv("metrics.csv")
+metrics.to_csv(os.path.join(results_dir, "metrics.csv"))
 print(metrics)
 
-diag_report = check_diagnostics(metrics)
-print(json.dumps(diag_report, indent=2))
+# --- Assess and generate report ---
+from scripts.check_diagnostics import check_diagnostics, suggest_next_steps
 
-if diag_report["overall"]["decision"] == "STOP":
-    raise RuntimeError(diag_report["overall"]["recommendation"])
+diag_report = check_diagnostics(metrics)
+next_steps = suggest_next_steps(training_report, diag_report)
+
+# Generate results_dir/report.md following the template in references/reporting.md.
+# Use training_report for the Convergence assessment.
+# Use diag_report["summary"] for the Recovery, Calibration, Contraction,
+# and Numerical Summary assessments (plain-language ratings per parameter).
+# Use next_steps for the Suggested Next Steps section.
+# If real data is available, also include the optional real-data sections.
 
 # --------------------------------------------------
 # 7. Amortized inference on real data (if any)
@@ -365,105 +382,53 @@ After training, always:
 
 All `fit_*` methods pass `**kwargs` through to Keras `model.fit()`. Use `verbose=1` (default) for progress bars, `verbose=2` for one line per epoch, or `verbose=0` to suppress output. In non-interactive environments (e.g., scripts piped to a file), prefer `verbose=2`.
 
-## Diagnostics gate
+## Diagnostics and reporting
 
-This section applies to **low-dimensional inferential targets** such as scalar or vector parameters. For image-valued targets, do **not** use `scripts/check_diagnostics.py`; instead, save visual diagnostics and inspect a small grid of generated samples from held-out conditions.
+This section applies to **low-dimensional inferential targets** such as scalar or vector parameters. For image-valued targets, skip the standard report and use visual sample grids instead.
 
-After computing diagnostics with `workflow.compute_default_diagnostics(test_data=..., as_data_frame=True)`, you **must** perform the following steps. Do not skip any of them.
-
-### Always save and check diagnostics
-
-The returned DataFrame has metric names as rows (`RMSE`, `Log-gamma`, `ECE`, `Post. Contraction`) and parameter names as columns.
-
-After computing diagnostics, always:
-
-1. **Print the full DataFrame** so values are visible in the output.
-2. **Save the DataFrame** to CSV:
-   ```python
-   metrics.to_csv("metrics.csv")
-   ```
-3. **Run `scripts/check_diagnostics.py`** to get a structured pass/fail report:
-   ```bash
-   python scripts/check_diagnostics.py --metrics metrics.csv
-   ```
-   Or call it in-process:
-   ```python
-   from scripts.check_diagnostics import check_diagnostics
-   report = check_diagnostics(metrics)
-   ```
-4. The script checks each parameter against house thresholds and returns a JSON report with a `GO`, `WARN`, or `STOP` decision.
-
-### Go / no-go decision
-
-- If **any parameter** has `ECE > 0.10` or `NRMSE > 0.15`: **stop**. Do not proceed to real-data inference. Diagnose and fix first (see "When things go wrong" table).
-- If **any parameter** has `ECE > 0.05` or `NRMSE > 0.10`: **warn** the user and proceed only if they accept the risk.
-- If contraction is `< 0.80` for parameters expected to be identifiable: **warn** — the data may not be informative for those parameters, or the summary network may need more capacity.
-- If contraction is `> 0.99` with `ECE > 0.05`: **stop** — the posterior is overconfident and miscalibrated.
+After every training + diagnostics run, you **must** generate a self-contained diagnostic report. See `references/reporting.md` for the full template.
 
 ## Scripts
 
 | Script | Purpose | Input | Output |
 |--------|---------|-------|--------|
 | `scripts/inspect_training.py` | Check training convergence | `--history history.json` | JSON report: NaN, overfitting, under-training |
-| `scripts/check_diagnostics.py` | Check diagnostics against house thresholds | `--metrics metrics.csv` | JSON report: per-parameter GO/WARN/STOP |
+| `scripts/check_diagnostics.py` | Produce qualitative per-parameter assessments for the report | `--metrics metrics.csv [--history history.json]` | JSON: per-parameter ratings (calibration, recovery, contraction) + summary + next steps |
 
-Both scripts can be run from the command line or imported as Python modules (see template above).
+Both scripts can be run from the command line or imported as Python modules:
+
+```python
+from scripts.inspect_training import inspect_history
+from scripts.check_diagnostics import check_diagnostics, suggest_next_steps
+
+training_report = inspect_history(history.history)
+diag_report = check_diagnostics(metrics)
+next_steps = suggest_next_steps(training_report, diag_report)
+```
 
 ## Additional rules
 
 - **Only online training requires a simulator.** Offline and disk workflows only require simulated pairs from the correct generative process.
 - **Always keep preprocessing identical between training and inference.** Any transformation applied to simulations must also be applied to real data.
 - **Do not interpret posteriors from poor diagnostics.** A sharp posterior can still be badly calibrated and vice versa.
-- **Save checkpoints during training.** Neural posterior training can take time; preserve usable models and diagnostics.
 - **Document the simulation budget.** Report how many simulations, which prior, and which training mode were used.
 - **Report uncertainty with samples, not only point estimates.** BayesFlow gives approximate posterior draws — use them.
 
 ## Diagnostic interpretation
 
-Use `workflow.compute_default_diagnostics(...)` as the **primary** diagnostic interface. Use `workflow.plot_default_diagnostics(...)` only as supporting visual evidence.
+Use `workflow.compute_default_diagnostics(...)` as the **primary** diagnostic interface. Use `workflow.plot_default_diagnostics(...)` as supporting visual evidence for the report.
 
-Prioritize these **numerical diagnostics**:
+`check_diagnostics()` converts numeric diagnostics into qualitative per-parameter ratings:
 
-1. **Calibration**
-   - Good posteriors should be well-calibrated on held-out simulations
-   - Use **expected calibration error (ECE)** as the main scalar summary
+- **calibration** — rated from ECE: `excellent`, `fair`, or `poor`
+- **recovery** — rated from NRMSE: `excellent`, `good`, `fair`, or `poor`
+- **contraction** — rated from posterior contraction: `high`, `medium`, `low`, or `poor — overconfident` (high contraction + poor calibration)
 
-2. **Recovery / estimation error**
-   - Posterior summaries should ideally recover the known generating parameters across the test bank
-   - Use **NRMSE** as the main scalar summary
-
-3. **Posterior contraction**
-   - The posterior should contract meaningfully relative to the prior when the data are informative
-   - Use **posterior contraction** as the main uncertainty-reduction summary
-
-Treat the following plots as **secondary diagnostics** that help explain failures, not as the primary acceptance criteria:
-
-- **Coverage** for calibration
-- **Recovery** for point-estimation behavior
-- **z-score / contraction** for sensitivity and uncertainty reduction
-
-### House thresholds
-
-These are pragmatic workflow guardrails, not library defaults.
-
-- **ECE**
-  - `< 0.05` excellent
-  - `0.05 – 0.10` acceptable
-  - `> 0.10` problematic
-
-- **Posterior contraction**
-  - `< 0.80` weak information gain
-  - `0.80 – 0.95` good
-  - `0.95 – 0.99` excellent if calibration remains good
-  - `> 0.99` inspect for possible over-concentration or train/test mismatch
-
-- **NRMSE**
-  - `< 0.05` good
-  - `0.05 – 0.10` acceptable
-  - `0.10 – 0.15` weak
-  - `> 0.15` poor
+The output also includes a plain-language `summary` per parameter (e.g., `"excellent calibration; good recovery; high contraction"`) ready to paste into the report.
 
 If diagnostics disagree, trust **calibration** first. A narrow but miscalibrated posterior is worse than a wider calibrated one.
+
+Numeric thresholds are internal to `check_diagnostics()` — do not expose them in the report. Use only the qualitative ratings.
 
 ## Posterior predictive checks
 
@@ -514,28 +479,3 @@ General recipe:
 ## Model sizes
 
 Always check `references/model-sizes.md` for rules on model sizes when choosing a summary backbone and an inference network for a particular problem.
-
-## Reporting template
-
-Always report:
-
-- inferential targets, conditions (data) and associated dimensionalities
-- simulator description
-- prior specification
-- training mode: online / offline / disk
-- simulation budget
-- architecture:
-  - summary network (if present)
-  - inference network
-- held-out diagnostic results
-- posterior predictive checks (if real data present)
-- limitations and likely simulator misspecifications
-
-When the user asks for a report or mentions a non-technical audience, produce a **standalone markdown report file** explaining:
-
-- what BayesFlow learned
-- what the diagnostics say
-- whether the posterior seems calibrated
-- whether the model reproduces the observed data
-- what remains uncertain
-- suggested next steps
