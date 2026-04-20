@@ -55,7 +55,7 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
 These rules are non-negotiable. Violating any of them will silently produce wrong results.
 
 - **MUST use `bf.Adapter()` for data routing.** Build an explicit adapter chain with `.as_set()`, `.constrain()`, `.concatenate()`, etc. and pass `adapter=` to `BasicWorkflow`. Do NOT invent custom adapter functions, lambdas, or manual preprocessing — the adapter handles training and inference identically. The naming shorthand (`inference_variables=`, `summary_variables=` as kwargs) is ONLY acceptable when the simulator output already has the exact shapes/dtypes the networks expect AND no parameter has bounded support. When in doubt, use an explicit adapter.
-- **MUST start with the Small network configuration** from `references/model-sizes.md`. Scale up to Base or Large ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
+- **MUST start with the Base network configuration** from `references/model-sizes.md`. Scale up to Large or XL ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
 - **MUST use `workflow.simulate(N)` to generate test data** for diagnostics — not a Python for-loop over `simulator()`. The simulator returned by `bf.make_simulator` is a batched object; `workflow.simulate(N)` calls it efficiently and returns data in the format the workflow expects.
 - **MUST use `workflow.compute_default_diagnostics(test_data=...)` and `workflow.plot_default_diagnostics(test_data=...)`** for in-silico diagnostics. NEVER hand-roll coverage, bias, or calibration computations — the built-in methods are correct, complete, and consistent with the house thresholds.
 - **For image-valued inference targets, follow `references/image-generation.md`.** MUST use `bf.networks.DiffusionModel(subnet=...)` with `UNet`, `UViT`, or `ResidualUViT` — not the default low-dimensional setup. Conditions must be spatially concatenable with the image target (broadcast `(B, D)` to `(B, H, W, D)`). `scripts/check_diagnostics.py` does not apply; use visual sample grids instead.
@@ -114,9 +114,9 @@ simulator = bf.make_simulator([my_prior, my_observation_model])
 # - If the TARGET itself is an image or spatial field, switch to the image-generation workflow in
 #   references/image-generation.md and use DiffusionModel(subnet=UNet/UViT/ResidualUViT).
 #
-# ALWAYS start with the SMALL config from references/model-sizes.md. Scale up only if diagnostics
+# ALWAYS start with the Base config from references/model-sizes.md. Scale up only if diagnostics
 # show poor recovery or calibration after sufficient training.
-summary_net = bf.networks.SetTransformer(...)  # see references/model-sizes.md — start with Small
+summary_net = bf.networks.SetTransformer(...)  # see references/model-sizes.md — start with Base
 
 inference_net = bf.networks.FlowMatching()
 # alternatives:
