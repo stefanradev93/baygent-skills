@@ -256,6 +256,10 @@ def suggest_next_steps(training_report: dict, diagnostic_report: dict) -> list[s
             "All diagnostics are within acceptable bounds — proceed to "
             "real-data inference and posterior predictive checks."
         )
+        steps.append(
+            "If the simulator is fast, consider a refinement pass with "
+            "online training (fit_online) to squeeze out additional performance."
+        )
 
     return steps
 

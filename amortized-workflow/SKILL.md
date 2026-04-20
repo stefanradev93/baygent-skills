@@ -24,13 +24,15 @@ metadata:
 Every amortized Bayesian analysis follows this sequence. Do not skip steps — especially simulator validation and model criticism.
 
 1. **Formulate** — Define the generative story. What latent variables or parameters generated the observations?
-2. **Specify the simulator regime** — Decide whether inference will rely on:
-   - **Online training**: simulator available and fast enough to generate data on the fly
-   - **Offline training**: pre-simulated data available and fits in memory
-   - **Disk training**: pre-simulated data available on disk and too large for memory
+2. **Specify the simulator regime** — The first iteration always uses **offline training** for fast turnaround, regardless of simulator speed. The simulator regime only determines the simulation budget for the pilot run:
+   - **Fast simulator** (< 1 s per draw): pre-simulate **10 000** datasets, train for **100 epochs**
+   - **Slow simulator** (1 s – minutes per draw): pre-simulate **3 000–5 000** datasets, train for **100 epochs**
+   - **No simulator / pre-existing bank**: use whatever is available; switch to **disk training** if it does not fit in memory
+   Online training is a refinement step — use it only after the first offline pass shows healthy diagnostics and you want to squeeze out more performance.
 3. **Define prior + observation model or simulation bank**
-   - If online: implement prior and observation model and wrap them in a simulator
-   - If offline/disk: ensure simulations are already generated from the intended prior and data-generating process or need pre-processing
+   - Implement prior and observation model and wrap them in a simulator
+   - Pre-simulate the pilot budget into a dict (using `workflow.simulate(N)`) for offline training
+   - If the simulator is external or proprietary, ensure simulations are already generated from the intended prior and data-generating process
 4. **Choose the architecture** — this step is critical; getting it wrong silently ruins inference. See `references/conditioning.md` for the full conditioning logic and decision table.
    - **"Simple vector"** means the observation is a **single fixed-length feature vector** whose element order is meaningful (e.g., 5 named sensor readings, a pre-computed summary statistic). Only then: route through `inference_conditions` with no summary network.
    - **Set-based / exchangeable data** — If the simulator produces **N observations that are exchangeable** (i.e., their joint likelihood is invariant to permutation), the data is a **set**, not a vector. This includes: N i.i.d. draws, regression datasets with (x, y) pairs, repeated measurements, trial-level data, cross-sectional samples. Route through `summary_variables` with a `SetTransformer`. **Never put this in `inference_conditions`.**
@@ -41,14 +43,15 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
    - **When in doubt, use a summary network.** It is always safer to include one than to omit one; a summary network will always be needed if the data has more than one axis.
 5. **Build the workflow** — Prefer `bf.BasicWorkflow(...)`
 6. **Run simulation sanity checks** — Before training, verify that simulated data look plausible and span the relevant range of real observations
-7. **Train the amortizer**
-   - `workflow.fit_online(...)` if generating on the fly
-   - `workflow.fit_offline(...)` if loading all simulations in memory
+7. **Train the amortizer** — First iteration always uses offline training for fast feedback:
+   - `workflow.fit_offline(...)` with the pre-simulated pilot budget (default first pass)
+   - `workflow.fit_online(...)` only as a refinement step after offline diagnostics look healthy, or when the user explicitly requests it
    - `workflow.fit_disk(...)` if streaming simulations from disk
+   **Always offer to run training in the terminal** so the user can monitor progress interactively.
 8. **Diagnose in silico** — Use held-out simulations with known ground truth using the workflow's built-in diagnostics: `workflow.compute_default_diagnostics(...)` for numerical results and `workflow.plot_default_diagnostics(...)` for visual diagnostics.
 9. **Amortized inference on real data** — Use `workflow.sample(...)`
 10. **Posterior predictive checks (PPCs)** — Re-simulate data from posterior samples and compare to the real data using model-specific test quantities
-11. **Report results** — Include simulator assumptions, training regime, simulation budget, diagnostic performance, PPC results, and limitations
+11. **Write a report** — Use `references/reporting.md` to generate a structured report outlining results and next steps.
 
 ## Hard rules — MUST and NEVER
 
@@ -62,12 +65,14 @@ These rules are non-negotiable. Violating any of them will silently produce wron
 - **`workflow.sample()` returns original parameter names, NOT `"inference_variables"`.** The adapter's reverse transform restores the original keys from the simulator (e.g., `"alpha"`, `"beta"`, `"sigma"`). Each parameter has shape `(batch, num_samples)` for scalars or `(batch, num_samples, d)` for vectors. NEVER index into `"inference_variables"` — that key does not exist in the output.
 - **MUST reuse the existing simulator functions for PPCs.** NEVER re-implement the generative model by hand for posterior predictive checks. Loop over a subset of posterior draws (50 is a good default), indexing over the `num_samples` axis, and pass each draw through the simulator's forward model.
 - **MUST save `history.history` as JSON** (not CSV, not a DataFrame — it is a plain dict). Then run `scripts/inspect_training.py` or call `inspect_history()` in-process.
-- **MUST pass `validation_data=` to all `fit_*` calls.** Use an integer (e.g., `validation_data=300`) for online training.
+- **MUST pass `validation_data=` to all `fit_*` calls.** For offline training, hold out ~300 simulations as a separate validation dict. For online training (refinement step only), pass an integer (e.g., `validation_data=300`) to auto-simulate.
 - **NEVER mix an explicit `adapter=` with the naming shorthand** (`inference_variables=`, `summary_variables=`, `inference_conditions=` as kwargs). They are mutually exclusive. Passing both causes silent conflicts.
 - **NEVER flatten structured data into `inference_conditions`.** Sets, time series, and images MUST go through `summary_variables` with an appropriate summary network.
 - **`workflow.plot_default_diagnostics()` ALWAYS returns a `dict[str, Figure]`.** Iterate directly over `.items()` to save figures. Do not type-check or branch on the return type.
 - **NEVER skip in-silico diagnostics.** Good training loss does not imply good inference.
 - **MUST generate `report.md` after every training + diagnostics run.** Store all artifacts in `<slug>/` (see `references/reporting.md` for naming and structure). Save all diagnostic figures with their standard names, save `metrics.csv`, and produce a self-contained markdown diagnostic report. If real data is available, include the optional real-data sections in the same report. For image-valued targets, skip the standard report and use visual sample grids instead.
+- **NEVER use `fit_online` as the first training pass** unless the user explicitly requests it. The first iteration MUST use `fit_offline` with a pre-simulated pilot budget (10k sims for fast simulators, 3k–5k for slow ones) to maximize iteration speed. Online training is a refinement step for subsequent iterations.
+- **MUST offer to run training in the terminal** so the user can monitor progress. Training scripts should be runnable standalone; do not silently execute long training runs without giving the user access to the live output.
 
 ## Installation
 
@@ -87,7 +92,7 @@ RANDOM_SEED = sum(map(ord, "my-sbi-analysis-v1"))
 rng = np.random.default_rng(RANDOM_SEED)
 
 # --------------------------------------------------
-# 1. Define prior + observation model (online case)
+# 1. Define prior + observation model
 # --------------------------------------------------
 
 def my_prior():
@@ -161,14 +166,32 @@ workflow = bf.BasicWorkflow(
 )
 
 # --------------------------------------------------
-# 5. Train (use deep learning best practices)
+# 5. Pre-simulate pilot budget (ALWAYS offline first)
+# --------------------------------------------------
+# First iteration: pre-simulate a fixed budget for fast turnaround.
+# - Fast simulator (< 1 s/draw): 10 000 datasets
+# - Slow simulator (1 s+ /draw): 3 000–5 000 datasets
+# Online training is a REFINEMENT step — only use it after offline
+# diagnostics are healthy and you want to squeeze out more performance.
+
+N_PILOT = 10_000  # adjust down for slow simulators
+N_VAL = 300
+
+all_sims = workflow.simulate(N_PILOT + N_VAL)
+
+# Split into training and validation sets
+train_data = {k: v[:N_PILOT] for k, v in all_sims.items()}
+val_data = {k: v[N_PILOT:] for k, v in all_sims.items()}
+
+# --------------------------------------------------
+# 6. Train (offline first — fast iteration)
 # --------------------------------------------------
 
-history = workflow.fit_online(
-    epochs=100,          # 100 - 200 epochs is a good heuristic
+history = workflow.fit_offline(
+    data=train_data,
+    epochs=100,
     batch_size=32,
-    num_batches_per_epoch=100,
-    validation_data=300,  # auto-simulates 300 validation sets
+    validation_data=val_data,
 )
 
 # --- Mandatory: save history and inspect training convergence ---
@@ -187,7 +210,7 @@ if not training_report["overall"]["ok"]:
         print(f"  - {issue}")
 
 # --------------------------------------------------
-# 6. In-silico diagnostics and reporting
+# 7. In-silico diagnostics and reporting
 # --------------------------------------------------
 
 # MUST use workflow.simulate() — NEVER loop over simulator() manually.
@@ -228,7 +251,7 @@ next_steps = suggest_next_steps(training_report, diag_report)
 # If real data is available, also include the optional real-data sections.
 
 # --------------------------------------------------
-# 7. Amortized inference on real data (if any)
+# 8. Amortized inference on real data (if any)
 # --------------------------------------------------
 
 # The adapter is applied in REVERSE after sampling: the returned dict
@@ -245,7 +268,7 @@ samples = workflow.sample(
 #      samples["beta"].shape  == (1, 1000, 1)
 
 # --------------------------------------------------
-# 8. Posterior predictive checks (custom)
+# 9. Posterior predictive checks (custom)
 # --------------------------------------------------
 
 # MUST reuse the existing simulator functions for PPCs.
@@ -262,27 +285,23 @@ samples = workflow.sample(
 #     # Compare x_rep to x_obs using domain-specific summaries
 ```
 
-## Offline and disk training
+## Online training (refinement step)
 
-Only **online training** requires a callable simulator.
-
-If the simulator is slow, unavailable, proprietary, or external, BayesFlow can still be trained from simulations alone.
-
-### Offline training
+Online training generates fresh simulations on the fly during training. **Use it only after the first offline pass shows healthy diagnostics** and you want to squeeze out additional performance with a larger effective simulation budget. It is also the natural choice when the user explicitly requests it.
 
 ```python
-workflow = bf.BasicWorkflow(
-    inference_network=bf.networks.FlowMatching(),
-    summary_network=summary_net,
-    inference_variables=["parameters"],
-    summary_variables=["observables"],
-    ...
+# Refinement: switch to online training after successful offline iteration
+history = workflow.fit_online(
+    epochs=200,
+    batch_size=32,
+    num_batches_per_epoch=100,
+    validation_data=300,
 )
-
-history = workflow.fit_offline(data=simulated_data, epochs=100, batch_size=32, validation_data=validation_data)
 ```
 
-### Disk training
+## Disk training
+
+Use disk training when the simulation bank is too large for memory.
 
 ```python
 def custom_load(path_to_file):
@@ -380,11 +399,9 @@ After training, always:
 
 ### Controlling terminal output
 
-All `fit_*` methods pass `**kwargs` through to Keras `model.fit()`. Use `verbose=1` (default) for progress bars, `verbose=2` for one line per epoch, or `verbose=0` to suppress output. In non-interactive environments (e.g., scripts piped to a file), prefer `verbose=2`.
+All `fit_*` methods pass `**kwargs` through to Keras `model.fit()`. Use `verbose=1` (default) for progress bars, `verbose=2` for one line per epoch, or `verbose=0` to suppress output. Prefer `verbose=1` and remind the user to focus the terminal to follow how the script progresses.
 
 ## Diagnostics and reporting
-
-This section applies to **low-dimensional inferential targets** such as scalar or vector parameters. For image-valued targets, skip the standard report and use visual sample grids instead.
 
 After every training + diagnostics run, you **must** generate a self-contained diagnostic report. See `references/reporting.md` for the full template.
 
@@ -405,14 +422,6 @@ training_report = inspect_history(history.history)
 diag_report = check_diagnostics(metrics)
 next_steps = suggest_next_steps(training_report, diag_report)
 ```
-
-## Additional rules
-
-- **Only online training requires a simulator.** Offline and disk workflows only require simulated pairs from the correct generative process.
-- **Always keep preprocessing identical between training and inference.** Any transformation applied to simulations must also be applied to real data.
-- **Do not interpret posteriors from poor diagnostics.** A sharp posterior can still be badly calibrated and vice versa.
-- **Document the simulation budget.** Report how many simulations, which prior, and which training mode were used.
-- **Report uncertainty with samples, not only point estimates.** BayesFlow gives approximate posterior draws — use them.
 
 ## Diagnostic interpretation
 
@@ -453,18 +462,6 @@ General recipe:
    - event frequencies
    - temporal or spatial structure
 4. If replicated data systematically miss the observed data, improve the simulator before trusting inference
-
-## Common gotchas
-
-- **Using online training with a slow simulator** — switch to offline or disk training
-- **Training on simulations from the wrong prior** — networks may not generalize well to real data
-- **Using train simulations for diagnostics** — gives over-optimistic results
-- **Ignoring preprocessing mismatch** — real-data inference breaks silently if scaling/formatting differs from training
-- **Flattening structured data** — wastes inductive bias and usually hurts calibration. The most common mistake is treating N exchangeable 1D observations as a flat vector instead of turning them into a `(N, 1)` set and using a SetTransformer
-- **Interpreting loss as inferential quality** — low loss does not guarantee good posterior estimation
-- **Skipping PPCs** — good in-silico recovery does not guarantee the simulator explains the real data
-- **Over-trusting contraction** — strong contraction without calibration can mean overconfidence
-- **No checkpointing** — long training runs should always save intermediate weights
 
 ## When things go wrong
 

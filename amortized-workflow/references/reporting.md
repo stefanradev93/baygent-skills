@@ -154,9 +154,10 @@ The z-score–contraction plot summarizes posterior quality in two dimensions. T
 
 Use these as a reference when filling in the final section:
 
-- All diagnostics healthy → "Proceed to real-data inference and posterior predictive checks."
+- All diagnostics healthy → "Proceed to real-data inference and posterior predictive checks. If the simulator is fast, consider a refinement pass with online training (`fit_online`) to squeeze out additional performance."
 - Under-trained → "Increase the number of epochs (e.g., double the current value) and re-train."
 - Calibration poor → "Consider increasing summary network capacity or training for more epochs."
 - Recovery poor for specific parameters → "Those parameters may be weakly identifiable under the current prior and data design. Consider a more informative prior or a richer summary network."
 - Contraction very high with poor calibration → "The posterior may be overconfident. Inspect the simulator for potential issues and increase the simulation budget."
 - Overfitting detected → "Reduce network capacity, add regularization, or increase the simulation budget."
+- First offline pass looks promising but not perfect → "Switch to online training with more epochs to leverage a larger effective simulation budget."
