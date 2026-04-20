@@ -47,7 +47,7 @@ Each skill is focused and lean. Rather than one monolithic skill that covers eve
 
 - **bayesian-workflow** covers the fundamentals that every Bayesian analysis needs.
 - **causal-inference** handles causal design, identification, and refutation — delegating the modeling to bayesian-workflow.
-- **amortized-workflow** covers simulation-based inference with BayesFlow — architecture selection, adapter routing, diagnostic gating, and image-generation workflows.
+- **amortized-workflow** covers simulation-based inference with BayesFlow — end-to-end architecture selection, training, simulation-based diagnostics, and real data application.
 
 ## About
 
