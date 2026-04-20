@@ -24,8 +24,7 @@ workflow = bf.BasicWorkflow(
     inference_network=inference_net,
     summary_network=summary_net,
     adapter=adapter,            # explicit adapter — replaces the naming shorthand
-    checkpoint_filepath="checkpoints",
-    checkpoint_name="my_model",
+    checkpoint_filepath="<slug>",
 )
 ```
 

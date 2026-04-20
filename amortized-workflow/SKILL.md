@@ -165,7 +165,7 @@ workflow = bf.BasicWorkflow(
 # --------------------------------------------------
 
 history = workflow.fit_online(
-    epochs=500,          # always use at least 100 epochs
+    epochs=100,          # 100 - 200 epochs is a good heuristic
     batch_size=32,
     num_batches_per_epoch=100,
     validation_data=300,  # auto-simulates 300 validation sets
@@ -275,11 +275,11 @@ workflow = bf.BasicWorkflow(
     inference_network=bf.networks.FlowMatching(),
     summary_network=summary_net,
     inference_variables=["parameters"],
-    summary_variables=["observables"],  # NOT inference_conditions — structured data needs a summary network
+    summary_variables=["observables"],
     ...
 )
 
-history = workflow.fit_offline(data=simulated_data, epochs=500, batch_size=32, validation_data=validation_data)
+history = workflow.fit_offline(data=simulated_data, epochs=100, batch_size=32, validation_data=validation_data)
 ```
 
 ### Disk training
@@ -294,11 +294,11 @@ workflow = bf.BasicWorkflow(
     inference_network=bf.networks.FlowMatching(),
     summary_network=summary_net,
     inference_variables=["parameters"],
-    summary_variables=["observables"],  # NOT inference_conditions — structured data needs a summary network
+    summary_variables=["observables"],
     ...
 )
 
-history = workflow.fit_disk(root="path/to/simulation_bank", load_fn=custom_load, epochs=500, batch_size=32, validation_data=validation_data)
+history = workflow.fit_disk(root="path/to/simulation_bank", load_fn=custom_load, epochs=100, batch_size=32, validation_data=validation_data)
 ```
 
 ## Architecture defaults

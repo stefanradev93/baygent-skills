@@ -17,7 +17,7 @@ In practice, data is routed to the right slots via a `bf.Adapter()` pipeline. Se
 Data passed **directly and unchanged** to the inference network. No summary network is applied.
 
 **Use this for:**
-- Scalars or fixed-length feature vectors (e.g., a single design matrix row, a scalar covariate, a precomputed statistic)
+- Scalars or fixed-length feature vectors (e.g., precomputed summary statistics, scalar covariates)
 - Data that is already a **single vector** with no structural dimensions to remove
 - Any quantity whose dimensionality is the same for every simulation (i.e., its shape does not vary across the batch)
 
