@@ -24,8 +24,8 @@ If the data fits one of these categories, do **not** build a custom network.
 
 Every custom summary network must:
 
-1. **Inherit from `bf.networks.SummaryNetwork`**
-2. **Use the `@bf.utils.serialization.serializable()` decorator** so the network can be saved and loaded
+1. **Inherit from `SummaryNetwork`**
+2. **Use the `@serializable` decorator** so the network can be saved and loaded
 3. **Implement `call(self, x, **kwargs)`** returning a fixed-size summary tensor of shape `(batch_size, summary_dim)`
 4. **Use Keras layers** — any `keras.layers.*` layer is valid inside the network
 
@@ -35,7 +35,9 @@ Every custom summary network must:
 import keras
 import bayesflow as bf
 
-@bf.utils.serialization.serializable("custom")
+from bayesflow.utils.serialization import serializable, serialize
+
+@serializable("custom")
 class GRUSummary(bf.networks.SummaryNetwork):
     def __init__(self, summary_dim=8, **kwargs):
         super().__init__(**kwargs)
@@ -58,8 +60,8 @@ If the network has constructor arguments beyond `**kwargs` and Python primitives
 ```python
 def get_config(self):
     base_config = super().get_config()
-    config = {"summary_dim": self.summary_dim, "my_param": self.my_param}
-    return base_config | bf.utils.serialization.serialize(config)
+    config = {"summary_dim": self.summary_dim}
+    return base_config | serialize(config)
 ```
 
 ---
