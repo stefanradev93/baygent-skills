@@ -7,8 +7,7 @@ description: >
   BayesFlow, neural posterior estimation, posterior amortization, simulator design, prior design
   for SBI, offline/online simulation pipelines,
   uncertainty quantification from simulators, structured data encoders (sets, time series, images),
-  or mentions of BasicWorkflow, fit_online, fit_offline, fit_disk, FlowMatching, DiffusionModel,
-  StableConsistencyModel, summary networks, adapters, or simulation budgets.
+  or mentions of BasicWorkflow, fit_online, fit_offline, fit_disk, flow matching, diffusion model, consistency model, normalizing flow, summary networks, adapters, or simulation budgets.
 license: MIT
 metadata:
   author:
@@ -124,11 +123,11 @@ simulator = bf.make_simulator([my_prior, my_observation_model])
 # show poor recovery or calibration after sufficient training.
 summary_net = bf.networks.SetTransformer(...)  # see references/model-sizes.md — start with Base
 
-inference_net = bf.networks.FlowMatching()
+inference_net = bf.networks.StableConsistencyModel()
 # alternatives:
-# bf.networks.DiffusionModel()
-# bf.networks.StableConsistencyModel()   # when fast inference is desired
-# bf.networks.CouplingFlow() # good-old normalizing flow
+# bf.networks.FlowMatching() # slower sampler, slightly more performant overall
+# bf.networks.DiffusionModel() # slower sampler, good for image generation
+# bf.networks.CouplingFlow(depth=4, transform="spline") # good-old normalizing flow
 
 # --------------------------------------------------
 # 3. Build the adapter (MUST use bf.Adapter)
@@ -311,7 +310,7 @@ def custom_load(path_to_file):
 
 
 workflow = bf.BasicWorkflow(
-    inference_network=bf.networks.FlowMatching(),
+    inference_network=bf.networks.StableConsistencyModel(),
     summary_network=summary_net,
     inference_variables=["parameters"],
     summary_variables=["observables"],
