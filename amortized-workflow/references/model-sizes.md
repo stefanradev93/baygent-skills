@@ -52,18 +52,18 @@
 
 ### Subnet Sizing for Diffusion-Like Networks (Preferred Default)
 
-All free- (diffusion-like) inference networks ( `StableConsistencyModel`, `FlowMatching`, `DiffusionModel`) use a `TimeMLP` subnet by default. These should be preferred to coupling flows (i.e., normalizing flows) unless the user dictates otherwise. Control their capacity via `subnet_kwargs` and `time_embedding_dim`, e.g.:
+All free- (diffusion-like) inference networks ( `FlowMatching`, `DiffusionModel`, `StableConsistencyModel`) use a `TimeMLP` subnet by default. These should be preferred to coupling flows (i.e., normalizing flows) unless the user dictates otherwise. Control their capacity via `subnet_kwargs` and `time_embedding_dim`, e.g.:
 
 ```python
-bf.networks.StableConsistencyModel(subnet_kwargs={"widths": (128, 128), "time_embedding_dim": 16})
+bf.networks.FlowMatching(subnet_kwargs={"widths": (128,)*3, "time_embedding_dim": 16})
 ```
 
 | Model Size | widths                 | time_embedding_dim |
 |------------|------------------------|--------------------|
 | Small      | (128, 128, 128)                  | 16       |
-| Base       | (256, 256, 256, 256)             | 16       |
-| Large      | (512, 512, 512, 512, 512)        | 32       |
-| XL         | (512, 512, 512, 512, 512, 512)   | 32       |
+| Base       | (256, 256, 256, 256)             | 32       |
+| Large      | (512, 512, 512, 512, 512)        | 64       |
+| XL         | (512, 512, 512, 512, 512, 512)   | 64       |
 
 ### Subnet Sizing for Coupling Flows (Legacy Default)
 
