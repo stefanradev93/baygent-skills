@@ -24,8 +24,8 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
 
 1. **Formulate** — Define the generative story. What latent variables or parameters generated the observations?
 2. **Specify the simulator regime** — The first iteration always uses **offline training** for fast turnaround, regardless of simulator speed. The simulator regime only determines the simulation budget for the pilot run:
-   - **Fast simulator** (< 1 s per draw): pre-simulate **10 000** datasets, train for **100 epochs**
-   - **Slow simulator** (1 s – minutes per draw): pre-simulate **3 000–5 000** datasets, train for **100 epochs**
+   - **Fast simulator** (< 0.05 s per draw): pre-simulate **20 000** datasets, train for **100 epochs**
+   - **Slow simulator** (> 1 s – minutes per draw): pre-simulate **3 000–5 000** datasets, train for **100 epochs**
    - **No simulator / pre-existing bank**: use whatever is available; switch to **disk training** if it does not fit in memory
    Online training is a refinement step — use it only after the first offline pass shows healthy diagnostics and you want to squeeze out more performance.
 3. **Define prior + observation model or simulation bank**
@@ -41,7 +41,7 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
    - **A workflow can use both slots simultaneously.** Fixed-length metadata (e.g., sample size N, scalar design variables) can go in `inference_conditions` while structured observations go in `summary_variables`.
    - **When in doubt, use a summary network.** It is always safer to include one than to omit one; a summary network will always be needed if the data has more than one axis.
 5. **Build the workflow** — Prefer `bf.BasicWorkflow(...)`
-    - Decide on which variables to auto-standardize with `standardize="inference_variables"` as default init arg. If, for example, conditioning vectors have large values, use `standardize="all"`.
+    - Decide on which variables to auto-standardize. Prefer `standardize="all"` unless you have verfied that the simulator outputs are already in a good range for the networks.
 6. **Run simulation sanity checks** — Before training, verify that simulated data look plausible and span the relevant range of real observations. Again, pay attention to what needs to be standardized.
 7. **Train the amortizer** — First iteration always uses offline training for fast feedback:
    - `workflow.fit_offline(...)` with the pre-simulated pilot budget (default first pass)
@@ -57,9 +57,9 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
 
 These rules are non-negotiable. Violating any of them will silently produce wrong results.
 
-- **MUST use `bf.Adapter()` for data routing.** Build an explicit adapter chain with `.as_set()`, `.constrain()`, `.concatenate()`, etc. and pass `adapter=` to `BasicWorkflow`. Do NOT invent custom adapter functions, lambdas, or manual preprocessing — the adapter handles training and inference identically. The naming shorthand (`inference_variables=`, `summary_variables=` as kwargs) is ONLY acceptable when the simulator output already has the exact shapes/dtypes the networks expect AND no parameter has bounded support. When in doubt, use an explicit adapter.
+- **MUST use `bf.Adapter()` for data routing.** Build an explicit adapter chain with `.as_set()`, `.constrain()`, `.concatenate()`, etc. and pass `adapter=` to `BasicWorkflow`, as described in `references/adapter.md`. Do NOT do manual preprocessing — the adapter handles training and inference identically. The naming shorthand (`inference_variables=`, `summary_variables=` as kwargs to `BasicWorkflow`) is ONLY acceptable when the simulator output already has the exact shapes/dtypes the networks expect AND no parameter has bounded support. When in doubt, use an explicit adapter.
 - **MUST start with the Base network configuration** from `references/model-sizes.md`. Scale up to Large or XL ONLY if diagnostics show poor recovery or calibration after sufficient training. Oversized networks waste compute and can hurt calibration on simple problems.
-- **MUST use `workflow.simulate(N)` to generate test data** for diagnostics — not a Python for-loop over `simulator()`. The simulator returned by `bf.make_simulator` is a batched object; `workflow.simulate(N)` calls it efficiently and returns data in the format the workflow expects.
+- **MUST use `workflow.simulate(N)` to generate train/test data** — not a Python for-loop over `simulator()`. The simulator returned by `bf.make_simulator` is a batched object; `workflow.simulate(N)` calls it efficiently and returns data in the format the workflow expects.
 - **MUST use `workflow.compute_default_diagnostics(test_data=...)` and `workflow.plot_default_diagnostics(test_data=...)`** for in-silico diagnostics. NEVER hand-roll coverage, bias, or calibration computations — the built-in methods are correct, complete, and consistent with the house thresholds.
 - **For image-valued inference targets, follow `references/image-generation.md`.** MUST use `bf.networks.DiffusionModel(subnet=...)` with `UNet`, `UViT`, or `ResidualUViT` — not the default low-dimensional setup. Conditions must be spatially concatenable with the image target (broadcast `(B, D)` to `(B, H, W, D)`). The standard diagnostic report does not apply; use visual sample grids instead.
 - **`workflow.sample()` returns original parameter names, NOT `"inference_variables"`.** The adapter's reverse transform restores the original keys from the simulator (e.g., `"alpha"`, `"beta"`, `"sigma"`). Each parameter has shape `(batch, num_samples)` for scalars or `(batch, num_samples, d)` for vectors. NEVER index into `"inference_variables"` — that key does not exist in the output.
@@ -88,9 +88,6 @@ pip install "bayesflow"
 import bayesflow as bf
 import numpy as np
 
-RANDOM_SEED = sum(map(ord, "my-sbi-analysis-v1"))
-rng = np.random.default_rng(RANDOM_SEED)
-
 # --------------------------------------------------
 # 1. Define prior + observation model
 # --------------------------------------------------
@@ -111,22 +108,17 @@ simulator = bf.make_simulator([my_prior, my_observation_model])
 # 2. Choose architecture
 # --------------------------------------------------
 
-# IMPORTANT: Choose summary network based on data structure.
-# - None ONLY if the observation is a single fixed-length vector with meaningful element order.
-# - SetTransformer if the data consists of N exchangeable observations (e.g., i.i.d. draws,
-#   regression datasets, repeated measurements). This is the MOST COMMON case.
-# - TimeSeriesTransformer / TimeSeriesNetwork for ordered sequences.
-# - ConvolutionalNetwork for image data when the IMAGE is the condition / observation and the target is low-dimensional.
-# - If the TARGET itself is an image or spatial field, switch to the image-generation workflow in
-#   references/image-generation.md and use DiffusionModel(subnet=UNet/UViT/ResidualUViT).
-#
-# ALWAYS start with the Base config from references/model-sizes.md. Scale up only if diagnostics
-# show poor recovery or calibration after sufficient training.
-summary_net = bf.networks.SetTransformer(...)  # see references/model-sizes.md — start with Base
+# See references/conditioning.md for the full conditioning logic and decision table.
 
-inference_net = bf.networks.StableConsistencyModel()
+# See references/model-sizes.md for different configurations — always start with Base.
+
+# Example summary network for set-based data (exchangeable observations):
+summary_net = bf.networks.SetTransformer(...) 
+
+
+inference_net = bf.networks.FlowMatching(...)
 # alternatives:
-# bf.networks.FlowMatching() # slower sampler, slightly more performant overall
+# bf.networks.StableConsistencyModel() # faster sampler, less performant
 # bf.networks.DiffusionModel() # slower sampler, good for image generation
 # bf.networks.CouplingFlow(depth=4, transform="spline") # good-old normalizing flow
 
@@ -137,9 +129,6 @@ inference_net = bf.networks.StableConsistencyModel()
 # See references/adapter.md for the full API and a step-by-step example.
 # The adapter routes simulator output to the correct network slots and handles
 # parameter constraints, set assembly, dtype conversion, and concatenation.
-#
-# NEVER mix adapter= with naming kwargs (inference_variables=, summary_variables=, etc.).
-# NEVER write a custom adapter function — always use the bf.Adapter() chain.
 adapter = (
     bf.Adapter()
     .as_set(["observables"])              # (N,) -> (N, 1) for SetTransformer
@@ -170,12 +159,12 @@ workflow = bf.BasicWorkflow(
 # 5. Pre-simulate pilot budget (ALWAYS offline first)
 # --------------------------------------------------
 # First iteration: pre-simulate a fixed budget for fast turnaround.
-# - Fast simulator (< 1 s/draw): 10 000 datasets
+# - Fast simulator (< 0.05 s/draw): 20 000 datasets
 # - Slow simulator (1 s+ /draw): 3 000–5 000 datasets
 # Online training is a REFINEMENT step — only use it after offline
 # diagnostics are healthy and you want to squeeze out more performance.
 
-N_PILOT = 10_000  # adjust down for slow simulators
+N_PILOT = 20_000  # adjust down for slow simulators
 N_VAL = 300
 
 all_sims = workflow.simulate(N_PILOT + N_VAL)
@@ -190,7 +179,7 @@ val_data = {k: v[N_PILOT:] for k, v in all_sims.items()}
 
 history = workflow.fit_offline(
     data=train_data,
-    epochs=100,
+    epochs=100, # typically between 100 and 300
     batch_size=32,
     validation_data=val_data,
 )
@@ -214,8 +203,6 @@ if not training_report["overall"]["ok"]:
 # 7. In-silico diagnostics and reporting
 # --------------------------------------------------
 
-# MUST use workflow.simulate() — NEVER loop over simulator() manually.
-# MUST use the built-in diagnostics — NEVER hand-roll coverage/bias/calibration.
 test_data = workflow.simulate(300)
 
 # --- Save diagnostic figures (standard names from references/reporting.md) ---
@@ -311,7 +298,7 @@ def custom_load(path_to_file):
 
 
 workflow = bf.BasicWorkflow(
-    inference_network=bf.networks.StableConsistencyModel(),
+    inference_network=bf.networks.FlowMatching(...),
     summary_network=summary_net,
     inference_variables=["parameters"],
     summary_variables=["observables"],
@@ -331,7 +318,7 @@ See `references/augmentations.md` for a guide on applying optional transformatio
 
 See `references/adapter.md` for the full adapter API and a step-by-step example.
 
-When `BasicWorkflow` receives `inference_variables=`, `summary_variables=`, etc. as keyword arguments, it constructs a **minimal implicit adapter** that only renames and routes those keys. This is sufficient when the simulator output already has the right shapes and dtypes. Use an explicit `bf.Adapter()` chain and pass `adapter=` to the workflow whenever you need structural transforms (`.as_set`, `.broadcast`), parameter constraints (`.constrain`), feature engineering (`.sqrt`, `.log`), dtype coercion (`.convert_dtype`), or custom concatenation. The explicit adapter and the naming shorthand are mutually exclusive — do not use both.
+When `BasicWorkflow` receives `inference_variables=`, `summary_variables=`, etc. as keyword arguments, it constructs a **minimal implicit adapter** that only renames and routes those keys. This is sufficient when the simulator output already has the right shapes and dtypes. Use an explicit `bf.Adapter()` chain and pass `adapter=` to the workflow whenever you need structural transforms (`.as_set`, `as_time_series`, `.broadcast`), parameter constraints (`.constrain`), feature engineering (`.sqrt`, `.log`), dtype coercion (`.convert_dtype`), or custom concatenation. The explicit adapter and the naming shorthand are mutually exclusive — do not use both.
 
 ### Summary networks
 
@@ -356,11 +343,10 @@ As a heuristic, always start by setting the `summary_dim` argument to 2x the num
 
 For most posterior approximation tasks, default to one of:
 
-- `bf.networks.StableConsistencyModel()` - fast sampling, recommended for the first iteration
-- `bf.networks.FlowMatching()` - slower sampling, recommended for a refinement step
-- `bf.networks.DiffusionModel()` - slower sampling, recommended for high-dimensional targets
-
-Use **StableConsistencyModel** when very fast posterior sampling at deployment time is especially important.
+- `bf.networks.FlowMatching()` - multi-step sampling, recommended for a first iteration
+- `bf.networks.DiffusionModel()` - multi-step sampling, recommended for high-dimensional targets
+- `bf.networks.StableConsistencyModel()` - few-step sampling, less performant, can lose information
+- `bf.networks.CouplingFlow()` - single-step sampling, recommended if very fast inference is important
 
 ### Image-valued inference targets
 
