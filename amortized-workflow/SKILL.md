@@ -41,7 +41,8 @@ Every amortized Bayesian analysis follows this sequence. Do not skip steps — e
    - **A workflow can use both slots simultaneously.** Fixed-length metadata (e.g., sample size N, scalar design variables) can go in `inference_conditions` while structured observations go in `summary_variables`.
    - **When in doubt, use a summary network.** It is always safer to include one than to omit one; a summary network will always be needed if the data has more than one axis.
 5. **Build the workflow** — Prefer `bf.BasicWorkflow(...)`
-6. **Run simulation sanity checks** — Before training, verify that simulated data look plausible and span the relevant range of real observations
+    - Decide on which variables to auto-standardize with `standardize="inference_variables"` as default init arg. If, for example, conditioning vectors have large values, use `standardize="all"`.
+6. **Run simulation sanity checks** — Before training, verify that simulated data look plausible and span the relevant range of real observations. Again, pay attention to what needs to be standardized.
 7. **Train the amortizer** — First iteration always uses offline training for fast feedback:
    - `workflow.fit_offline(...)` with the pre-simulated pilot budget (default first pass)
    - `workflow.fit_online(...)` only as a refinement step after offline diagnostics look healthy, or when the user explicitly requests it
@@ -320,6 +321,10 @@ workflow = bf.BasicWorkflow(
 history = workflow.fit_disk(root="path/to/simulation_bank", load_fn=custom_load, epochs=100, batch_size=32, validation_data=validation_data)
 ```
 
+## Augmentations
+
+See `references/augmentations.md` for a guide on applying optional transformations during training.
+
 ## Architecture defaults
 
 ### Adapters
@@ -467,7 +472,7 @@ General recipe:
 
 | Symptom                          | Likely Cause                                              | Fix                                                                 |
 |-----------------------------------|-----------------------------------------------------------|---------------------------------------------------------------------|
-| Loss becomes NAN                       | Simulator outputs contain inf/nan or large values         | Inspect simulator outputs; if nan/inf, explore root cause; if large values, ensure everything is standardized in the workflow (e.g., divide by 255 for images) |
+| Loss becomes NAN                       | Simulator outputs contain inf/nan or large values         | Inspect simulator outputs; if nan/inf, explore root cause; if large values, ensure workflow uses the proper `standardize` flag or the simulator normalizes outputs (e.g., divide by 255 for images) |
 | Recovery good / Calibration bad   | Networks are underexpressive or training is too short       | Train for twice the number of epochs; if not fixed, increase summary capacity to Large |
 | Recovery bad / Calibration good  | Some parameters are non-identifiable or same issue as bad recovery | Increase network capacity by two and train for twice as long; if no improvement, parameters may be non-identifiable |
 | Nans/inf in samples on real data  | Real data preprocessed differently, contains outliers, or model misspecified | Look at scale of real data; prompt user to test for outliers; check for potential model mis-specification |
