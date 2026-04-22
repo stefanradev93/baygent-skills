@@ -71,19 +71,19 @@ Once installed, just ask your agent naturally:
 
 ## What's included
 
-```
 amortized-workflow/
 ├── SKILL.md                          # Main workflow instructions
 ├── references/
 │   ├── adapter.md                    # Adapter API and step-by-step examples
+│   ├── augmentation.md               # Data augmentation policies and examples
 │   ├── conditioning.md               # Conditioning logic and decision table
 │   ├── custom-summary.md             # Custom summary network guidelines
 │   ├── image-generation.md           # Image-valued targets (UNet, DiffusionModel)
-│   └── model-sizes.md               # Small/Base/Large network configurations
+│   ├── model-sizes.md                # Small/Base/Large network configurations
+│   └── reporting.md                  # Reporting outputs, metrics, and conventions
 └── scripts/
-    ├── check_diagnostics.py          # Diagnostics threshold checker
+    ├── check_diagnostics.py          # Diagnostics checker
     └── inspect_training.py           # Training convergence inspector
-```
 
 ## Authors
 
